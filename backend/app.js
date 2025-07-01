@@ -8,7 +8,7 @@ import { errorHandler } from './middleware/errorHandler.js'
 const app = express()
 
 app.use(cors({
-    origin: 'retro-gaming-world.surge.sh',
+    origin: 'https://retro-gaming-world.surge.sh',
     credentials: true
 }))
 app.use(express.json())
