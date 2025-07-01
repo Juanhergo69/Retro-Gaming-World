@@ -2,7 +2,7 @@ import axios from 'axios'
 import { getErrorMessage } from 'common'
 
 const api = axios.create({
-    baseURL: '/api',
+    baseURL: 'https://retro-gaming-world.onrender.com/api',
     withCredentials: true,
     headers: {
         'Content-Type': 'application/json',
