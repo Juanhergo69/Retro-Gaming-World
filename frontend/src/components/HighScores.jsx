@@ -2,6 +2,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useEffect, useState } from 'react'
 import { fetchUserData } from '../logic/fetchUserData'
 import { fetchGameHighscores } from '../logic/fetchGameHighscores'
+import { truncateUsername } from '../utils/helpers'
 
 function HighScores({ game }) {
     const { user } = useAuth()
@@ -83,7 +84,7 @@ function HighScores({ game }) {
                                                 </span>
                                             </div>
                                         )}
-                                        <span className="font-medium text-gray-800">{hs.username || 'Player'}</span>
+                                        <span className="font-medium text-gray-800">{truncateUsername(hs.username) || 'Player'}</span>
                                     </div>
                                 </td>
                                 <td className="p-3 text-right font-mono text-lg text-retro-blue font-bold">{hs.score}</td>

@@ -16,11 +16,85 @@ const DIRECTIONS = {
 }
 
 const BRICK_COLORS = [
-    'bg-red-500',    //Red
-    'bg-orange-400', //Orange
-    'bg-yellow-400', //Yellow
-    'bg-green-500',  //Green
-    'bg-blue-500',   //Blue
+    'bg-red-500',    //Red//
+    'bg-orange-400', //Orange//
+    'bg-yellow-400', //Yellow//
+    'bg-green-500',  //Green//
+    'bg-blue-500',   //Blue//
+]
+
+const BRICK_PATTERNS = [
+    //Level 1 - Classic//
+    (width) => {
+        const rows = 5
+        const bricks = []
+        for (let row = 0; row < rows; row++) {
+            for (let col = 0; col < width - 2; col++) {
+                bricks.push({ x: col + 1, y: row + 2, width: 1, height: 1 })
+            }
+        }
+        return bricks
+    },
+    //Level 2 - Zigzag//
+    (width) => {
+        const bricks = []
+        const rows = 6
+        for (let row = 0; row < rows; row++) {
+            const start = row % 2 === 0 ? 1 : 2
+            for (let col = start; col < width - 2; col += 2) {
+                bricks.push({ x: col, y: row + 2, width: 1, height: 1 })
+            }
+        }
+        return bricks
+    },
+    //Level 3 - Piramid//
+    (width) => {
+        const bricks = []
+        const center = Math.floor(width / 2)
+        const rows = 5
+        for (let row = 0; row < rows; row++) {
+            const cols = row + 1
+            const start = center - Math.floor(cols / 2)
+            for (let col = start; col < start + cols; col++) {
+                if (col >= 1 && col < width - 1) {
+                    bricks.push({ x: col, y: row + 2, width: 1, height: 1 })
+                }
+            }
+        }
+        return bricks
+    },
+    //Level 4 - Frame//
+    (width) => {
+        const bricks = []
+        const rows = 6
+        for (let row = 0; row < rows; row++) {
+            for (let col = 1; col < width - 1; col++) {
+                if (row === 0 || row === rows - 1 || col === 1 || col === width - 2) {
+                    bricks.push({ x: col, y: row + 2, width: 1, height: 1 })
+                }
+            }
+        }
+        return bricks
+    },
+    //Nivel 5+ - Random//
+    (width) => {
+        const bricks = []
+        const rows = 3 + Math.floor(Math.random() * 4)
+        const density = 0.4 + Math.random() * 0.3
+
+        for (let row = 0; row < rows; row++) {
+            for (let col = 1; col < width - 1; col++) {
+                if (Math.random() < density) {
+                    const brickWidth = Math.random() < 0.3 ? 2 : 1
+                    if (col + brickWidth <= width - 1) {
+                        bricks.push({ x: col, y: row + 2, width: brickWidth, height: 1 })
+                        if (brickWidth > 1) col++
+                    }
+                }
+            }
+        }
+        return bricks
+    }
 ]
 
 const ArkanoidGame = () => {
@@ -39,33 +113,6 @@ const ArkanoidGame = () => {
         dx: BALL_SPEED,
         dy: -BALL_SPEED
     })
-    const [bricks, setBricks] = useState(() => {
-        const newBricks = []
-        const rows = 5
-        const cols = GRID_WIDTH - 2
-        const brickWidth = 1
-        const brickHeight = 1
-
-        for (let row = 0; row < rows; row++) {
-            for (let col = 0; col < cols; col++) {
-                newBricks.push({
-                    x: col + 1,
-                    y: row + 2,
-                    width: brickWidth,
-                    height: brickHeight,
-                    color: BRICK_COLORS[row % BRICK_COLORS.length],
-                    points: (rows - row) * 10,
-                    hitbox: {
-                        left: col + 1,
-                        right: col + 1 + brickWidth,
-                        top: row + 2,
-                        bottom: row + 2 + brickHeight
-                    }
-                })
-            }
-        }
-        return newBricks
-    })
     const [gameOver, setGameOver] = useState(false)
     const [isPaused, setIsPaused] = useState(false)
     const [score, setScore] = useState(0)
@@ -75,34 +122,27 @@ const ArkanoidGame = () => {
     const gameLoopRef = useRef()
     const speedRef = useRef(INITIAL_SPEED)
 
-    const initializeBricks = useCallback(() => {
-        const newBricks = []
-        const rows = 5
-        const cols = GRID_WIDTH - 2
-        const brickWidth = 1
-        const brickHeight = 1
+    const initializeBricks = useCallback((currentLevel) => {
+        const patternIndex = Math.min(currentLevel - 1, BRICK_PATTERNS.length - 1)
+        const brickPositions = BRICK_PATTERNS[patternIndex](GRID_WIDTH)
 
-        for (let row = 0; row < rows; row++) {
-            for (let col = 0; col < cols; col++) {
-                newBricks.push({
-                    x: col + 1,
-                    y: row + 2,
-                    width: brickWidth,
-                    height: brickHeight,
-                    color: BRICK_COLORS[row % BRICK_COLORS.length],
-                    points: (rows - row) * 10,
-                    hitbox: {
-                        left: col + 1,
-                        right: col + 1 + brickWidth,
-                        top: row + 2,
-                        bottom: row + 2 + brickHeight
-                    }
-                })
+        return brickPositions.map((pos) => {
+            const row = pos.y - 2
+            return {
+                ...pos,
+                color: BRICK_COLORS[row % BRICK_COLORS.length],
+                points: (5 - (row % 5)) * 10,
+                hitbox: {
+                    left: pos.x,
+                    right: pos.x + pos.width,
+                    top: pos.y,
+                    bottom: pos.y + pos.height
+                }
             }
-        }
-
-        return newBricks
+        })
     }, [])
+
+    const [bricks, setBricks] = useState(() => initializeBricks(1))
 
     useEffect(() => {
         const loadHighScore = async () => {
@@ -127,6 +167,8 @@ const ArkanoidGame = () => {
     }, [])
 
     const advanceLevel = useCallback(() => {
+        const newLevel = level + 1
+
         setBall({
             x: GRID_WIDTH / 2,
             y: GRID_HEIGHT - 3,
@@ -138,10 +180,11 @@ const ArkanoidGame = () => {
             y: GRID_HEIGHT - 2,
             direction: 'NONE',
         })
-        setBricks(initializeBricks())
-        setLevel(prevLevel => prevLevel + 1)
-        speedRef.current = Math.max(INITIAL_SPEED - (level * 2), 8)
-    }, [initializeBricks, level])
+        setBricks(initializeBricks(newLevel))
+        setLevel(newLevel)
+
+        speedRef.current = Math.max(INITIAL_SPEED - (newLevel * 3), 15)
+    }, [level, initializeBricks])
 
     const resetGame = useCallback(() => {
         setBall({
@@ -155,11 +198,12 @@ const ArkanoidGame = () => {
             y: GRID_HEIGHT - 2,
             direction: 'NONE',
         })
-        setBricks(initializeBricks())
+        setBricks(initializeBricks(1))
         setScore(0)
         setLevel(1)
         setGameOver(false)
         setShowInstructions(false)
+        speedRef.current = INITIAL_SPEED
     }, [initializeBricks])
 
     const movePaddle = useCallback(() => {
@@ -171,7 +215,6 @@ const ArkanoidGame = () => {
             const direction = DIRECTIONS[prev.direction]
             let newX = prev.x + direction.x
 
-            // Keep paddle within bounds
             newX = Math.max(0, Math.min(newX, GRID_WIDTH - PADDLE_WIDTH))
 
             return {
@@ -190,34 +233,33 @@ const ArkanoidGame = () => {
             let newDx = prev.dx
             let newDy = prev.dy
 
-            // Ball radius (half of ball size in grid units)
             const ballRadius = 0.4
 
-            // Left wall collision
+            //Left wall collision//
             if (newX - ballRadius <= 0) {
                 newDx = Math.abs(newDx)
                 newX = ballRadius
             }
 
-            // Right wall collision
-            if (newX + ballRadius >= GRID_WIDTH - 1) {
+            //Right wall collision//
+            if (newX + ballRadius >= GRID_WIDTH) {
                 newDx = -Math.abs(newDx)
-                newX = GRID_WIDTH - 1 - ballRadius
+                newX = GRID_WIDTH - ballRadius
             }
 
-            // Top wall collision (using the actual wall position)
-            if (newY - ballRadius <= 1) {
+            //Top wall collision//
+            if (newY - ballRadius <= 0) {
                 newDy = Math.abs(newDy)
-                newY = 1 + ballRadius
+                newY = ballRadius
             }
 
-            // Floor collision (game over)
+            //Floor collision (game over)//
             if (newY + ballRadius >= GRID_HEIGHT) {
                 handleGameOver()
                 return prev
             }
 
-            // Paddle collision - more precise detection
+            //Paddle collision//
             const paddleLeft = paddle.x
             const paddleRight = paddle.x + PADDLE_WIDTH
             const paddleTop = paddle.y
@@ -229,18 +271,14 @@ const ArkanoidGame = () => {
                 newX + ballRadius >= paddleLeft &&
                 newX - ballRadius <= paddleRight
             ) {
-                // Calculate hit position (0 = far left, 1 = far right)
                 const hitPosition = (newX - paddleLeft) / PADDLE_WIDTH
 
-                // Calculate bounce angle (-1 = 45° left, 0 = straight up, 1 = 45° right)
                 const angleFactor = (hitPosition - 0.5) * 2
 
-                // Calculate new direction while maintaining speed
                 const speed = Math.sqrt(prev.dx ** 2 + prev.dy ** 2)
                 newDx = angleFactor * speed * 0.8
                 newDy = -Math.sqrt(speed ** 2 - newDx ** 2)
 
-                // Adjust ball position to prevent sticking
                 newY = paddleTop - ballRadius
             }
 
@@ -257,16 +295,13 @@ const ArkanoidGame = () => {
         if (gameOver || isPaused || showInstructions) return
 
         setBall(prevBall => {
-            const newBricks = [...bricks] // Use current bricks from state
+            const newBricks = [...bricks]
             let brickHit = false
             let pointsEarned = 0
             let newDx = prevBall.dx
             let newDy = prevBall.dy
-
-            // Ball radius (half of ball size in grid units)
             const ballRadius = 0.4
 
-            // Ball boundaries
             const ballLeft = prevBall.x - ballRadius
             const ballRight = prevBall.x + ballRadius
             const ballTop = prevBall.y - ballRadius
@@ -274,8 +309,6 @@ const ArkanoidGame = () => {
 
             for (let i = 0; i < newBricks.length; i++) {
                 const brick = newBricks[i]
-
-                // Check for collision
                 if (
                     ballRight > brick.hitbox.left &&
                     ballLeft < brick.hitbox.right &&
@@ -285,43 +318,36 @@ const ArkanoidGame = () => {
                     brickHit = true
                     pointsEarned = brick.points
 
-                    // Calculate overlap on each side
                     const overlapLeft = ballRight - brick.hitbox.left
                     const overlapRight = brick.hitbox.right - ballLeft
                     const overlapTop = ballBottom - brick.hitbox.top
                     const overlapBottom = brick.hitbox.bottom - ballTop
 
-                    // Find smallest overlap to determine side of collision
                     const minOverlap = Math.min(
                         overlapLeft, overlapRight,
                         overlapTop, overlapBottom
                     )
 
-                    // Determine collision side and adjust ball direction
                     if (minOverlap === overlapLeft || minOverlap === overlapRight) {
                         newDx = -prevBall.dx
                     } else {
                         newDy = -prevBall.dy
                     }
 
-                    // Remove the brick
                     newBricks.splice(i, 1)
-                    break // Only destroy one brick per frame
+                    break
                 }
             }
 
             if (brickHit) {
-                // Update bricks state
                 setBricks(newBricks)
 
-                // Update score
                 setScore(prevScore => {
                     const newScore = prevScore + pointsEarned
                     if (newScore > highScore) setHighScore(newScore)
                     return newScore
                 })
 
-                // Return updated ball state
                 return {
                     ...prevBall,
                     dx: newDx,
@@ -329,7 +355,6 @@ const ArkanoidGame = () => {
                 }
             }
 
-            // Check if all bricks are cleared
             if (newBricks.length === 0) {
                 setTimeout(advanceLevel, 1000)
             }
@@ -409,60 +434,6 @@ const ArkanoidGame = () => {
         setShowInstructions(false)
     }
 
-    const renderWalls = () => {
-        const walls = []
-
-        // Left wall
-        for (let y = 0; y < GRID_HEIGHT; y++) {
-            walls.push(
-                <div
-                    key={`wall-left-${y}`}
-                    className="absolute bg-gray-700"
-                    style={{
-                        width: `${CELL_SIZE}px`,
-                        height: `${CELL_SIZE}px`,
-                        left: `0px`,
-                        top: `${y * CELL_SIZE}px`
-                    }}
-                />
-            )
-        }
-
-        // Right wall
-        for (let y = 0; y < GRID_HEIGHT; y++) {
-            walls.push(
-                <div
-                    key={`wall-right-${y}`}
-                    className="absolute bg-gray-700"
-                    style={{
-                        width: `${CELL_SIZE}px`,
-                        height: `${CELL_SIZE}px`,
-                        left: `${(GRID_WIDTH - 1) * CELL_SIZE}px`,
-                        top: `${y * CELL_SIZE}px`
-                    }}
-                />
-            )
-        }
-
-        // Top wall
-        for (let x = 0; x < GRID_WIDTH; x++) {
-            walls.push(
-                <div
-                    key={`wall-top-${x}`}
-                    className="absolute bg-gray-700"
-                    style={{
-                        width: `${CELL_SIZE}px`,
-                        height: `${CELL_SIZE}px`,
-                        left: `${x * CELL_SIZE}px`,
-                        top: `0px`
-                    }}
-                />
-            )
-        }
-
-        return walls
-    }
-
     return (
         <div className="fixed inset-0 bg-retro-dark flex flex-col">
             <div className="bg-retro-purple p-4 flex justify-between items-center">
@@ -497,8 +468,6 @@ const ArkanoidGame = () => {
                         height: `${GRID_HEIGHT * CELL_SIZE + 8}px`
                     }}
                 >
-                    {renderWalls()}
-
                     {/* Bricks */}
                     {bricks.map((brick, index) => (
                         <div

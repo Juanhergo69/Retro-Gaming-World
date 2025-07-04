@@ -35,3 +35,8 @@ export const formatMessageTime = (date) => {
 
     return date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
 }
+
+export const truncateUsername = (username) => {
+    if (!username) return 'User'
+    return username.length > 6 ? `${username.substring(0, 6)}...` : username
+}

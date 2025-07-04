@@ -159,20 +159,37 @@ const SuperPangGame = () => {
         setBubbles(prevBubbles => {
             return prevBubbles.map(bubble => {
                 const sizeSpeedFactor = 1 + (3 - bubble.size) * 0.2
+                const bubbleRenderSize = bubble.size * 0.8
+                const halfBubble = bubbleRenderSize / 2
+
+                const leftBound = halfBubble + 0.01
+                const rightBound = GRID_WIDTH - halfBubble - 0.01
+                const topBound = halfBubble + 0.01
+                const bottomBound = GRID_HEIGHT - halfBubble - 0.01
 
                 let newX = bubble.x + (bubble.dx * INITIAL_BUBBLE_SPEED.x * sizeSpeedFactor * (1 + level * 0.1))
                 let newY = bubble.y + (bubble.dy * INITIAL_BUBBLE_SPEED.y * sizeSpeedFactor * (1 + level * 0.1))
                 let newDx = bubble.dx
                 let newDy = bubble.dy
 
-                if (newX <= 0 || newX >= GRID_WIDTH - 1) {
-                    newDx = -newDx * (0.9 + Math.random() * 0.2)
-                    newX = Math.max(0, Math.min(GRID_WIDTH - 1, newX))
+                if (newX <= leftBound) {
+                    newDx = Math.abs(newDx) * (0.9 + Math.random() * 0.2)
+                    newX = leftBound
                 }
 
-                if (newY <= 0 || newY >= GRID_HEIGHT - 1) {
-                    newDy = -newDy * (0.9 + Math.random() * 0.2)
-                    newY = Math.max(0, Math.min(GRID_HEIGHT - 1, newY))
+                else if (newX >= rightBound) {
+                    newDx = -Math.abs(newDx) * (0.9 + Math.random() * 0.2)
+                    newX = rightBound
+                }
+
+                if (newY <= topBound) {
+                    newDy = Math.abs(newDy) * (0.9 + Math.random() * 0.2)
+                    newY = topBound
+                }
+
+                else if (newY >= bottomBound) {
+                    newDy = -Math.abs(newDy) * (0.9 + Math.random() * 0.2)
+                    newY = bottomBound
                 }
 
                 return {
@@ -220,11 +237,12 @@ const SuperPangGame = () => {
 
                 for (let j = bubbles.length - 1; j >= 0; j--) {
                     const bubble = bubbles[j]
+                    const bubbleSize = CELL_SIZE * bubble.size * 0.8
 
-                    const bubbleLeft = bubble.x * CELL_SIZE
-                    const bubbleRight = (bubble.x + bubble.size) * CELL_SIZE
-                    const bubbleTop = bubble.y * CELL_SIZE
-                    const bubbleBottom = (bubble.y + bubble.size) * CELL_SIZE
+                    const bubbleLeft = bubble.x * CELL_SIZE - (bubbleSize / 2)
+                    const bubbleRight = bubbleLeft + bubbleSize
+                    const bubbleTop = bubble.y * CELL_SIZE - (bubbleSize / 2)
+                    const bubbleBottom = bubbleTop + bubbleSize
 
                     const bulletLeft = bullet.x
                     const bulletRight = bullet.x + 5
@@ -279,22 +297,21 @@ const SuperPangGame = () => {
 
         const playerHit = bubbles.some(bubble => {
             const bubbleSize = CELL_SIZE * bubble.size * 0.8
-            const bubbleLeft = bubble.x * CELL_SIZE + (CELL_SIZE - bubbleSize) / 2
+            const bubbleLeft = bubble.x * CELL_SIZE - (bubbleSize / 2)
             const bubbleRight = bubbleLeft + bubbleSize
-            const bubbleTop = bubble.y * CELL_SIZE + (CELL_SIZE - bubbleSize) / 2
+            const bubbleTop = bubble.y * CELL_SIZE - (bubbleSize / 2)
             const bubbleBottom = bubbleTop + bubbleSize
 
-            const playerHeight = 20
             const playerLeft = player.x + 5
             const playerRight = player.x + PLAYER_WIDTH - 5
             const playerTop = GRID_HEIGHT * CELL_SIZE - 25
-            const playerBottom = playerTop + playerHeight
+            const playerBottom = playerTop + 20
 
             return (
                 playerRight > bubbleLeft &&
                 playerLeft < bubbleRight &&
-                playerBottom > bubbleTop + 5 &&
-                playerTop < bubbleBottom - 5
+                playerBottom > bubbleTop &&
+                playerTop < bubbleBottom
             )
         })
 
@@ -448,7 +465,8 @@ const SuperPangGame = () => {
                     className="relative bg-black border-4 border-retro-green"
                     style={{
                         width: `${GRID_WIDTH * CELL_SIZE}px`,
-                        height: `${GRID_HEIGHT * CELL_SIZE}px`
+                        height: `${GRID_HEIGHT * CELL_SIZE}px`,
+                        boxSizing: 'content-box'
                     }}
                 >
                     {/* Player */}
@@ -485,8 +503,9 @@ const SuperPangGame = () => {
                             style={{
                                 width: `${CELL_SIZE * bubble.size * 0.8}px`,
                                 height: `${CELL_SIZE * bubble.size * 0.8}px`,
-                                left: `${bubble.x * CELL_SIZE + (CELL_SIZE - CELL_SIZE * bubble.size * 0.8) / 2}px`,
-                                top: `${bubble.y * CELL_SIZE + (CELL_SIZE - CELL_SIZE * bubble.size * 0.8) / 2}px`
+                                left: `${Math.max(0, (bubble.x - bubble.size * 0.4) * CELL_SIZE)}px`,
+                                top: `${Math.max(0, (bubble.y - bubble.size * 0.4) * CELL_SIZE)}px`,
+                                transform: 'translate(0, 0)'
                             }}
                         />
                     ))}

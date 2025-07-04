@@ -1,7 +1,7 @@
 import { useAuth } from '../contexts/AuthContext'
 import { useModal } from '../contexts/ModalContext'
 import { useEffect, useState } from 'react'
-import { formatMessageTime } from '../utils/helpers'
+import { formatMessageTime, truncateUsername } from '../utils/helpers'
 import { fetchUserData } from '../logic/fetchUserData'
 import { fetchGameMessages, postGameMessage, deleteGameMessage } from '../logic/gameMessages'
 
@@ -173,7 +173,7 @@ function Messages({ game }) {
                         <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-2">
                                 <span className="font-retro text-gray-800">
-                                    {displayUsername}
+                                    {truncateUsername(displayUsername)}
                                 </span>
                                 <span
                                     className="text-xs text-gray-500"
