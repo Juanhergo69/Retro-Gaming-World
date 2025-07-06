@@ -3,10 +3,30 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { submitScore, getHighScore } from '../logic/scoreService'
 
-const GRID_SIZE = 21
-const CELL_SIZE = 25
-const INITIAL_SPEED = 200
-const POWER_PELLET_DURATION = 5000
+const getGameDimensions = () => {
+    if (window.innerWidth <= 640) { //Mobile//
+        return {
+            gridSize: 21,
+            cellSize: Math.min(Math.floor(window.innerWidth * 0.9 / 21), 20),
+            initialSpeed: 150,
+            powerPelletDuration: 5000
+        }
+    } else if (window.innerWidth <= 1024) { //Tablet//
+        return {
+            gridSize: 21,
+            cellSize: 25,
+            initialSpeed: 200,
+            powerPelletDuration: 5000
+        }
+    } else { //Desktop//
+        return {
+            gridSize: 21,
+            cellSize: 25,
+            initialSpeed: 200,
+            powerPelletDuration: 5000
+        }
+    }
+}
 
 const DIRECTIONS = {
     UP: { x: 0, y: -1 },
@@ -154,6 +174,7 @@ const PacmanGame = () => {
     const gameId = parseInt(location.pathname.split('/')[2])
     const navigate = useNavigate()
     const { user } = useAuth()
+    const [dimensions, setDimensions] = useState(getGameDimensions())
     const [pacman, setPacman] = useState({
         x: 10,
         y: 15,
@@ -173,8 +194,19 @@ const PacmanGame = () => {
     const [powerPelletActive, setPowerPelletActive] = useState(false)
     const gameLoopRef = useRef()
     const powerPelletTimerRef = useRef()
-    const speedRef = useRef(INITIAL_SPEED)
+    const speedRef = useRef(dimensions.initialSpeed)
     const wallsRef = useRef(new Set())
+
+    useEffect(() => {
+        const handleResize = () => {
+            const newDimensions = getGameDimensions()
+            setDimensions(newDimensions)
+            speedRef.current = newDimensions.initialSpeed
+        }
+
+        window.addEventListener('resize', handleResize)
+        return () => window.removeEventListener('resize', handleResize)
+    }, [])
 
     const getCurrentMazeLayout = useCallback(() => {
         if (level <= 5) {
@@ -211,32 +243,32 @@ const PacmanGame = () => {
         const gridY = Math.floor(y)
         const currentMaze = getCurrentMazeLayout()
 
-        if (gridY === 10 && (x < 0 || x >= GRID_SIZE)) {
+        if (gridY === 10 && (x < 0 || x >= dimensions.gridSize)) {
             return true
         }
 
-        if (gridX < 0 || gridX >= GRID_SIZE || gridY < 0 || gridY >= GRID_SIZE) {
+        if (gridX < 0 || gridX >= dimensions.gridSize || gridY < 0 || gridY >= dimensions.gridSize) {
             return false
         }
 
         return currentMaze[gridY][gridX] === 0
-    }, [getCurrentMazeLayout])
+    }, [getCurrentMazeLayout, dimensions])
 
     const isValidGhostMove = useCallback((x, y) => {
         const gridX = Math.floor(x)
         const gridY = Math.floor(y)
         const currentMaze = getCurrentMazeLayout()
 
-        if (gridY === 10 && (x < 0 || x >= GRID_SIZE)) {
+        if (gridY === 10 && (x < 0 || x >= dimensions.gridSize)) {
             return true
         }
 
-        if (gridX < 0 || gridX >= GRID_SIZE || gridY < 0 || gridY >= GRID_SIZE) {
+        if (gridX < 0 || gridX >= dimensions.gridSize || gridY < 0 || gridY >= dimensions.gridSize) {
             return false
         }
 
         return currentMaze[gridY][gridX] === 0
-    }, [getCurrentMazeLayout])
+    }, [getCurrentMazeLayout, dimensions])
 
     const initializeBoard = useCallback(() => {
         const newDots = []
@@ -340,8 +372,8 @@ const PacmanGame = () => {
         setPowerPelletActive(false)
         clearTimeout(powerPelletTimerRef.current)
         setLevel(prevLevel => prevLevel + 1)
-        speedRef.current = Math.max(INITIAL_SPEED - (level * 10), 50)
-    }, [initializeBoard, generateGhosts, level])
+        speedRef.current = Math.max(dimensions.initialSpeed - (level * 10), 50)
+    }, [initializeBoard, generateGhosts, level, dimensions])
 
     const resetGame = useCallback(() => {
         setLevel(1)
@@ -380,13 +412,13 @@ const PacmanGame = () => {
             if (Math.floor(moveY) === 10) {
                 if (moveX < 0) {
                     return {
-                        x: GRID_SIZE - 1,
+                        x: dimensions.gridSize - 1,
                         y: moveY,
                         direction: newDirection,
                         nextDirection: prev.nextDirection
                     }
                 }
-                else if (moveX >= GRID_SIZE) {
+                else if (moveX >= dimensions.gridSize) {
                     return {
                         x: 0,
                         y: moveY,
@@ -464,7 +496,7 @@ const PacmanGame = () => {
                         isScared: false,
                         speed: 0.6 + (ghost.id * 0.03)
                     })))
-                }, POWER_PELLET_DURATION)
+                }, dimensions.powerPelletDuration)
 
                 return newPellets
             }
@@ -613,8 +645,8 @@ const PacmanGame = () => {
 
                 if (Math.floor(newY) === 10) {
                     if (newX < 0) {
-                        newX = GRID_SIZE - 1
-                    } else if (newX >= GRID_SIZE) {
+                        newX = dimensions.gridSize - 1
+                    } else if (newX >= dimensions.gridSize) {
                         newX = 0
                     }
                 }
@@ -633,16 +665,16 @@ const PacmanGame = () => {
     const checkCollisions = useCallback(() => {
         if (gameOver || isPaused || showInstructions) return
 
-        const pacmanLeft = pacman.x * CELL_SIZE + CELL_SIZE * 0.1
-        const pacmanRight = pacmanLeft + CELL_SIZE * 0.8
-        const pacmanTop = pacman.y * CELL_SIZE + CELL_SIZE * 0.1
-        const pacmanBottom = pacmanTop + CELL_SIZE * 0.8
+        const pacmanLeft = pacman.x * dimensions.cellSize + dimensions.cellSize * 0.1
+        const pacmanRight = pacmanLeft + dimensions.cellSize * 0.8
+        const pacmanTop = pacman.y * dimensions.cellSize + dimensions.cellSize * 0.1
+        const pacmanBottom = pacmanTop + dimensions.cellSize * 0.8
 
         const collidingGhost = ghosts.find(ghost => {
-            const ghostLeft = ghost.x * CELL_SIZE + CELL_SIZE * 0.1
-            const ghostRight = ghostLeft + CELL_SIZE * 0.8
-            const ghostTop = ghost.y * CELL_SIZE + CELL_SIZE * 0.1
-            const ghostBottom = ghostTop + CELL_SIZE * 0.8
+            const ghostLeft = ghost.x * dimensions.cellSize + dimensions.cellSize * 0.1
+            const ghostRight = ghostLeft + dimensions.cellSize * 0.8
+            const ghostTop = ghost.y * dimensions.cellSize + dimensions.cellSize * 0.1
+            const ghostBottom = ghostTop + dimensions.cellSize * 0.8
 
             return !(
                 pacmanRight < ghostLeft ||
@@ -763,10 +795,10 @@ const PacmanGame = () => {
                             key={`wall-${x}-${y}`}
                             className="absolute bg-retro-blue"
                             style={{
-                                width: `${CELL_SIZE}px`,
-                                height: `${CELL_SIZE}px`,
-                                left: `${x * CELL_SIZE}px`,
-                                top: `${y * CELL_SIZE}px`
+                                width: `${dimensions.cellSize}px`,
+                                height: `${dimensions.cellSize}px`,
+                                left: `${x * dimensions.cellSize}px`,
+                                top: `${y * dimensions.cellSize}px`
                             }}
                         />
                     )
@@ -778,36 +810,40 @@ const PacmanGame = () => {
 
     return (
         <div className="fixed inset-0 bg-retro-dark flex flex-col">
-            <div className="bg-retro-purple p-4 flex justify-between items-center">
-                <div className="font-retro text-white text-xl">
+            {/* Header with game info */}
+            <div className="bg-retro-purple p-2 sm:p-4 flex flex-col sm:flex-row justify-between items-center">
+                <div className="font-retro text-white text-sm sm:text-xl mb-2 sm:mb-0 text-center sm:text-left">
                     Score: <span className="text-retro-yellow">{score}</span> |
-                    High Score: <span className="text-retro-green">{highScore}</span> |
+                    High: <span className="text-retro-green">{highScore}</span> |
                     Level: <span className="text-retro-blue">{level}</span>
                 </div>
 
-                <div className="flex space-x-3">
+                <div className="flex space-x-2 sm:space-x-3">
                     <button
                         onClick={() => setIsPaused(prev => !prev)}
-                        className="bg-retro-blue hover:bg-retro-blue-dark text-white font-retro px-4 py-2 rounded"
+                        className="bg-retro-blue hover:bg-retro-blue-dark text-white font-retro px-3 py-1 sm:px-4 sm:py-2 rounded text-sm sm:text-base"
                     >
                         {isPaused ? 'Resume' : 'Pause'}
                     </button>
 
                     <button
                         onClick={() => navigate('/home')}
-                        className="bg-retro-pink hover:bg-retro-pink-dark text-white font-retro px-4 py-2 rounded"
+                        className="bg-retro-pink hover:bg-retro-pink-dark text-white font-retro px-3 py-1 sm:px-4 sm:py-2 rounded text-sm sm:text-base"
                     >
                         Exit
                     </button>
                 </div>
             </div>
 
-            <div className="flex-1 flex items-center justify-center">
+            {/* Main game area */}
+            <div className="flex-1 flex items-center justify-center p-2 overflow-auto">
                 <div
-                    className="relative bg-black border-4 border-retro-green"
+                    className="relative bg-black border-4 border-transparent"
                     style={{
-                        width: `33.3rem`,
-                        height: `34.8rem`
+                        width: `${dimensions.gridSize * dimensions.cellSize + 8}px`,
+                        height: `${dimensions.gridSize * dimensions.cellSize + 35}px`,
+                        maxWidth: '100%',
+                        maxHeight: '100%'
                     }}
                 >
                     {renderWalls()}
@@ -818,10 +854,10 @@ const PacmanGame = () => {
                             key={`dot-${index}`}
                             className="absolute bg-white rounded-full"
                             style={{
-                                width: `${CELL_SIZE / 4}px`,
-                                height: `${CELL_SIZE / 4}px`,
-                                left: `${dot.x * CELL_SIZE + CELL_SIZE / 2 - CELL_SIZE / 8}px`,
-                                top: `${dot.y * CELL_SIZE + CELL_SIZE / 2 - CELL_SIZE / 8}px`
+                                width: `${dimensions.cellSize / 4}px`,
+                                height: `${dimensions.cellSize / 4}px`,
+                                left: `${dot.x * dimensions.cellSize + dimensions.cellSize / 2 - dimensions.cellSize / 8}px`,
+                                top: `${dot.y * dimensions.cellSize + dimensions.cellSize / 2 - dimensions.cellSize / 8}px`
                             }}
                         />
                     ))}
@@ -832,10 +868,10 @@ const PacmanGame = () => {
                             key={`pellet-${index}`}
                             className="absolute bg-retro-yellow rounded-full"
                             style={{
-                                width: `${CELL_SIZE / 2}px`,
-                                height: `${CELL_SIZE / 2}px`,
-                                left: `${pellet.x * CELL_SIZE + CELL_SIZE / 4}px`,
-                                top: `${pellet.y * CELL_SIZE + CELL_SIZE / 4}px`
+                                width: `${dimensions.cellSize / 2}px`,
+                                height: `${dimensions.cellSize / 2}px`,
+                                left: `${pellet.x * dimensions.cellSize + dimensions.cellSize / 4}px`,
+                                top: `${pellet.y * dimensions.cellSize + dimensions.cellSize / 4}px`
                             }}
                         />
                     ))}
@@ -844,10 +880,10 @@ const PacmanGame = () => {
                     <div
                         className="absolute bg-retro-yellow rounded-full overflow-hidden"
                         style={{
-                            width: `${CELL_SIZE * 0.8}px`,
-                            height: `${CELL_SIZE * 0.8}px`,
-                            left: `${pacman.x * CELL_SIZE + CELL_SIZE * 0.1}px`,
-                            top: `${pacman.y * CELL_SIZE + CELL_SIZE * 0.1}px`,
+                            width: `${dimensions.cellSize * 0.8}px`,
+                            height: `${dimensions.cellSize * 0.8}px`,
+                            left: `${pacman.x * dimensions.cellSize + dimensions.cellSize * 0.1}px`,
+                            top: `${pacman.y * dimensions.cellSize + dimensions.cellSize * 0.1}px`,
                             position: 'relative',
                             transformStyle: 'preserve-3d',
                             border: '1px solid retro-dark',
@@ -872,10 +908,10 @@ const PacmanGame = () => {
                                 (powerPelletActive ? 'bg-white animate-pulse' : 'bg-purple-800') :
                                 ghost.color}`}
                             style={{
-                                width: `${CELL_SIZE * 0.8}px`,
-                                height: `${CELL_SIZE * 0.8}px`,
-                                left: `${ghost.x * CELL_SIZE + CELL_SIZE * 0.1}px`,
-                                top: `${ghost.y * CELL_SIZE + CELL_SIZE * 0.1}px`,
+                                width: `${dimensions.cellSize * 0.8}px`,
+                                height: `${dimensions.cellSize * 0.8}px`,
+                                left: `${ghost.x * dimensions.cellSize + dimensions.cellSize * 0.1}px`,
+                                top: `${ghost.y * dimensions.cellSize + dimensions.cellSize * 0.1}px`,
                                 display: 'flex',
                                 flexDirection: 'column',
                                 justifyContent: 'space-between',
@@ -885,8 +921,8 @@ const PacmanGame = () => {
                             {/* Ghosts eyes */}
                             <div className="w-full flex justify-around mt-1">
                                 <div className="relative" style={{
-                                    width: `${CELL_SIZE * 0.2}px`,
-                                    height: `${CELL_SIZE * 0.2}px`
+                                    width: `${dimensions.cellSize * 0.2}px`,
+                                    height: `${dimensions.cellSize * 0.2}px`
                                 }}>
                                     <div className="absolute inset-0 bg-white rounded-full"></div>
                                     <div
@@ -904,8 +940,8 @@ const PacmanGame = () => {
                                 </div>
 
                                 <div className="relative" style={{
-                                    width: `${CELL_SIZE * 0.2}px`,
-                                    height: `${CELL_SIZE * 0.2}px`
+                                    width: `${dimensions.cellSize * 0.2}px`,
+                                    height: `${dimensions.cellSize * 0.2}px`
                                 }}>
                                     <div className="absolute inset-0 bg-white rounded-full"></div>
                                     <div
@@ -925,8 +961,8 @@ const PacmanGame = () => {
 
                             {/* Ghosts mouths */}
                             <div className="mb-1" style={{
-                                width: `${CELL_SIZE * 0.4}px`,
-                                height: `${CELL_SIZE * 0.15}px`,
+                                width: `${dimensions.cellSize * 0.4}px`,
+                                height: `${dimensions.cellSize * 0.15}px`,
                                 position: 'relative',
                                 overflow: 'hidden'
                             }}>
@@ -958,39 +994,42 @@ const PacmanGame = () => {
                             </div>
                         </div>
                     ))}
+                    {/* Game over overlay */}
                     {gameOver && (
                         <div className="absolute inset-0 bg-black bg-opacity-70 flex flex-col items-center justify-center">
-                            <h2 className="text-retro-pink font-retro text-4xl mb-6">GAME OVER</h2>
-                            <p className="text-white text-xl mb-4">Your score: {score}</p>
+                            <h2 className="text-retro-pink font-retro text-2xl sm:text-4xl mb-4 sm:mb-6">GAME OVER</h2>
+                            <p className="text-white text-lg sm:text-xl mb-3 sm:mb-4">Your score: {score}</p>
                             <button
                                 onClick={resetGame}
-                                className="bg-retro-yellow hover:bg-retro-yellow-dark text-retro-dark font-retro px-6 py-3 rounded-lg text-xl"
+                                className="bg-retro-yellow hover:bg-retro-yellow-dark text-retro-dark font-retro px-4 py-2 sm:px-6 sm:py-3 rounded-lg text-lg sm:text-xl"
                             >
                                 Play Again
                             </button>
                         </div>
                     )}
 
+                    {/* Paused overlay */}
                     {isPaused && !gameOver && !showInstructions && (
                         <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                            <h2 className="text-retro-blue font-retro text-4xl">PAUSED</h2>
+                            <h2 className="text-retro-blue font-retro text-2xl sm:text-4xl">PAUSED</h2>
                         </div>
                     )}
 
+                    {/* Instructions overlay */}
                     {showInstructions && (
-                        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4">
-                            <div className="bg-retro-dark border-4 border-retro-yellow rounded-lg p-6 max-w-2xl w-full mx-4">
-                                <h2 className="text-retro-green font-retro text-4xl mb-6 text-center">HOW TO PLAY PACMAN</h2>
+                        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-2 sm:p-4">
+                            <div className="bg-retro-dark border-4 border-retro-yellow rounded-lg p-4 sm:p-6 max-w-2xl w-full mx-2 sm:mx-4 overflow-y-auto max-h-[90vh]">
+                                <h2 className="text-retro-green font-retro text-2xl sm:text-4xl mb-4 sm:mb-6 text-center">HOW TO PLAY PACMAN</h2>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
                                     <div>
-                                        <h3 className="text-retro-blue font-retro text-2xl mb-3">Objective</h3>
-                                        <p className="text-white mb-4">
+                                        <h3 className="text-retro-blue font-retro text-xl sm:text-2xl mb-2 sm:mb-3">Objective</h3>
+                                        <p className="text-white mb-3 sm:mb-4 text-sm sm:text-base">
                                             Control Pacman to eat all the dots in the maze while avoiding the ghosts.
                                             Eat power pellets to temporarily turn the ghosts blue and vulnerable.
                                         </p>
-                                        <h3 className="text-retro-pink font-retro text-2xl mb-3">Scoring</h3>
-                                        <ul className="text-white space-y-2">
+                                        <h3 className="text-retro-pink font-retro text-xl sm:text-2xl mb-2 sm:mb-3">Scoring</h3>
+                                        <ul className="text-white space-y-1 sm:space-y-2 text-sm sm:text-base">
                                             <li>• Small dot: 10 points</li>
                                             <li>• Power pellet: 50 points</li>
                                             <li>• Ghost (when vulnerable): 200 points</li>
@@ -998,15 +1037,16 @@ const PacmanGame = () => {
                                     </div>
 
                                     <div>
-                                        <h3 className="text-retro-yellow font-retro text-2xl mb-3">Controls</h3>
-                                        <ul className="text-white space-y-3">
+                                        <h3 className="text-retro-yellow font-retro text-xl sm:text-2xl mb-2 sm:mb-3">Controls</h3>
+                                        <ul className="text-white space-y-1 sm:space-y-3 text-sm sm:text-base">
                                             <li>• <span className="text-retro-blue">← →</span> or <span className="text-retro-blue">A/D</span>: Move left/right</li>
                                             <li>• <span className="text-retro-blue">↑ ↓</span> or <span className="text-retro-blue">W/S</span>: Move up/down</li>
-                                            <li>• <span className="text-retro-blue">Space</span> or <span className="text-retro-blue">P</span>: Pause/Resume</li>
+                                            <li>• <span className="text-retro-blue">Touch</span> buttons on mobile</li>
+                                            <li>• <span className="text-retro-blue">P</span>: Pause game</li>
                                         </ul>
 
-                                        <h3 className="text-retro-pink font-retro text-2xl mt-6 mb-3">Game Rules</h3>
-                                        <ul className="text-white space-y-2">
+                                        <h3 className="text-retro-pink font-retro text-xl sm:text-2xl mt-4 sm:mt-6 mb-2 sm:mb-3">Game Rules</h3>
+                                        <ul className="text-white space-y-1 sm:space-y-2 text-sm sm:text-base">
                                             <li>• Game ends immediately if Pacman touches a ghost</li>
                                             <li>• Complete a level by eating all dots and pellets</li>
                                             <li>• Score carries over between levels</li>
@@ -1018,7 +1058,7 @@ const PacmanGame = () => {
                                 <div className="text-center">
                                     <button
                                         onClick={startGame}
-                                        className="bg-retro-pink hover:bg-retro-pink-dark text-white font-retro px-8 py-3 rounded-lg text-xl"
+                                        className="bg-retro-pink hover:bg-retro-pink-dark text-white font-retro px-6 py-2 sm:px-8 sm:py-3 rounded-lg text-lg sm:text-xl"
                                     >
                                         START GAME
                                     </button>
@@ -1029,39 +1069,44 @@ const PacmanGame = () => {
                 </div>
             </div>
 
-            <div className="md:hidden bg-retro-dark p-4 grid grid-cols-3 gap-2">
+            {/* Mobile controls - touch directional pad */}
+            <div className="md:hidden bg-retro-dark p-2 grid grid-cols-3 gap-2">
                 <div></div>
                 <button
-                    onClick={() => setPacman(prev => ({ ...prev, nextDirection: 'UP' }))}
-                    className="bg-retro-purple text-white p-4 rounded"
+                    onTouchStart={() => setPacman(prev => ({ ...prev, nextDirection: 'UP' }))}
+                    onTouchEnd={() => setPacman(prev => ({ ...prev, nextDirection: prev.direction }))}
+                    className="bg-retro-purple text-white p-3 rounded active:bg-retro-purple-dark"
                 >
                     ↑
                 </button>
                 <div></div>
 
                 <button
-                    onClick={() => setPacman(prev => ({ ...prev, nextDirection: 'LEFT' }))}
-                    className="bg-retro-purple text-white p-4 rounded"
+                    onTouchStart={() => setPacman(prev => ({ ...prev, nextDirection: 'LEFT' }))}
+                    onTouchEnd={() => setPacman(prev => ({ ...prev, nextDirection: prev.direction }))}
+                    className="bg-retro-purple text-white p-3 rounded active:bg-retro-purple-dark"
                 >
                     ←
                 </button>
                 <button
                     onClick={() => setIsPaused(prev => !prev)}
-                    className="bg-retro-blue text-white p-4 rounded"
+                    className="bg-retro-blue text-white p-3 rounded active:bg-retro-blue-dark"
                 >
                     {isPaused ? '▶' : '⏸'}
                 </button>
                 <button
-                    onClick={() => setPacman(prev => ({ ...prev, nextDirection: 'RIGHT' }))}
-                    className="bg-retro-purple text-white p-4 rounded"
+                    onTouchStart={() => setPacman(prev => ({ ...prev, nextDirection: 'RIGHT' }))}
+                    onTouchEnd={() => setPacman(prev => ({ ...prev, nextDirection: prev.direction }))}
+                    className="bg-retro-purple text-white p-3 rounded active:bg-retro-purple-dark"
                 >
                     →
                 </button>
 
                 <div></div>
                 <button
-                    onClick={() => setPacman(prev => ({ ...prev, nextDirection: 'DOWN' }))}
-                    className="bg-retro-purple text-white p-4 rounded"
+                    onTouchStart={() => setPacman(prev => ({ ...prev, nextDirection: 'DOWN' }))}
+                    onTouchEnd={() => setPacman(prev => ({ ...prev, nextDirection: prev.direction }))}
+                    className="bg-retro-purple text-white p-3 rounded active:bg-retro-purple-dark"
                 >
                     ↓
                 </button>

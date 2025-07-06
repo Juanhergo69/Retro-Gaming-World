@@ -47,8 +47,18 @@ const TetrisGame = () => {
     const [level, setLevel] = useState(1)
     const [lines, setLines] = useState(0)
     const [showInstructions, setShowInstructions] = useState(true)
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768)
     const gameLoopRef = useRef()
     const speedRef = useRef(INITIAL_SPEED)
+
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth <= 768)
+        }
+
+        window.addEventListener('resize', handleResize)
+        return () => window.removeEventListener('resize', handleResize)
+    }, [])
 
     useEffect(() => {
         const loadHighScore = async () => {
@@ -359,8 +369,8 @@ const TetrisGame = () => {
             for (let row = 0; row < currentPiece.shape.length; row++) {
                 for (let col = 0; col < currentPiece.shape[row].length; col++) {
                     if (currentPiece.shape[row][col] !== 0) {
-                        const y = position.y + row
-                        const x = position.x + col
+                        const y = position.y + row;
+                        const x = position.x + col;
                         if (y >= 0 && y < ROWS && x >= 0 && x < COLS) {
                             displayBoard[y][x] = currentPiece.color
                         }
@@ -385,18 +395,20 @@ const TetrisGame = () => {
         if (!nextPiece) return null
 
         return (
-            <div className="flex flex-col items-center">
-                {nextPiece.shape.map((row, rowIndex) => (
-                    <div key={rowIndex} className="flex">
-                        {row.map((cell, colIndex) => (
-                            <div
-                                key={`next-${rowIndex}-${colIndex}`}
-                                className={`w-[20px] h-[20px] border border-gray-800 ${cell ? nextPiece.color : 'bg-transparent'
-                                    }`}
-                            />
-                        ))}
-                    </div>
-                ))}
+            <div className="flex flex-col items-center justify-center p-2">
+                <h3 className="text-retro-blue font-retro text-lg mb-2 text-center">Next</h3>
+                <div className="bg-black p-2 rounded">
+                    {nextPiece.shape.map((row, rowIndex) => (
+                        <div key={rowIndex} className="flex justify-center">
+                            {row.map((cell, colIndex) => (
+                                <div
+                                    key={`next-${rowIndex}-${colIndex}`}
+                                    className={`w-[20px] h-[20px] border border-gray-800 ${cell ? nextPiece.color : 'bg-transparent'}`}
+                                />
+                            ))}
+                        </div>
+                    ))}
+                </div>
             </div>
         )
     }
@@ -407,50 +419,53 @@ const TetrisGame = () => {
     }
 
     return (
-        <div className="fixed inset-0 bg-retro-dark flex flex-col">
-            <div className="bg-retro-purple p-4 flex justify-between items-center">
-                <div className="font-retro text-white text-xl">
+        <div className="fixed inset-0 bg-retro-dark flex flex-col overflow-hidden">
+            {/* Header - responsive */}
+            <div className={`bg-retro-purple ${isMobile ? 'p-2' : 'p-4'} flex ${isMobile ? 'flex-col' : 'justify-between items-center'}`}>
+                <div className={`font-retro text-white ${isMobile ? 'text-sm text-center mb-1' : 'text-xl'}`}>
                     Score: <span className="text-retro-yellow">{score}</span> |
-                    High Score: <span className="text-retro-green">{highScore}</span> |
-                    Level: <span className="text-retro-blue">{level}</span> |
-                    Lines: <span className="text-retro-pink">{lines}</span>
+                    {!isMobile && ' High: '}<span className="text-retro-green">{highScore}</span> |
+                    {!isMobile && ' Level: '}<span className="text-retro-blue">{level}</span> |
+                    <span className="text-retro-pink"> {lines}</span>
                 </div>
 
-                <div className="flex space-x-3">
+                <div className={`flex ${isMobile ? 'justify-center space-x-2 mt-1' : 'space-x-3'}`}>
                     <button
                         onClick={() => setIsPaused(prev => !prev)}
-                        className="bg-retro-blue hover:bg-retro-blue-dark text-white font-retro px-4 py-2 rounded"
+                        className={`bg-retro-blue text-white font-retro ${isMobile ? 'px-2 py-1 text-xs' : 'px-4 py-2 rounded'}`}
                     >
                         {isPaused ? 'Resume' : 'Pause'}
                     </button>
-
                     <button
                         onClick={() => navigate('/home')}
-                        className="bg-retro-pink hover:bg-retro-pink-dark text-white font-retro px-4 py-2 rounded"
+                        className={`bg-retro-pink text-white font-retro ${isMobile ? 'px-2 py-1 text-xs' : 'px-4 py-2 rounded'}`}
                     >
                         Exit
                     </button>
                 </div>
             </div>
 
-            <div className="flex-1 flex flex-col md:flex-row items-center justify-center p-4 gap-6">
+            {/* Main game area - vertical stack on mobile */}
+            <div className={`flex-1 flex ${isMobile ? 'flex-col' : 'flex-row'} items-center justify-center p-2 gap-4 overflow-auto`}>
+                {/* Game board */}
                 <div
                     className="relative bg-black border-4 border-retro-green"
                     style={{
                         width: `${COLS * CELL_SIZE + 8}px`,
                         height: `${ROWS * CELL_SIZE + 8}px`,
-                        minWidth: `${COLS * CELL_SIZE + 8}px`
+                        minWidth: `${COLS * CELL_SIZE + 8}px`,
+                        maxWidth: '100%'
                     }}
                 >
                     {renderBoard()}
 
                     {gameOver && (
                         <div className="absolute inset-0 bg-black bg-opacity-70 flex flex-col items-center justify-center">
-                            <h2 className="text-retro-pink font-retro text-4xl mb-6 text-center">GAME OVER</h2>
-                            <p className="text-white text-xl mb-4">Your score: {score}</p>
+                            <h2 className={`text-retro-pink font-retro ${isMobile ? 'text-2xl' : 'text-4xl'} mb-4 text-center`}>GAME OVER</h2>
+                            <p className={`text-white ${isMobile ? 'text-sm' : 'text-xl'} mb-4`}>Your score: {score}</p>
                             <button
                                 onClick={initGame}
-                                className="bg-retro-yellow hover:bg-retro-yellow-dark text-retro-dark font-retro px-6 py-3 rounded-lg text-xl"
+                                className={`bg-retro-yellow text-retro-dark font-retro ${isMobile ? 'px-4 py-2 text-sm' : 'px-6 py-3 text-xl'} rounded-lg`}
                             >
                                 Play Again
                             </button>
@@ -459,79 +474,79 @@ const TetrisGame = () => {
 
                     {isPaused && !gameOver && !showInstructions && (
                         <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                            <h2 className="text-retro-blue font-retro text-4xl">PAUSED</h2>
+                            <h2 className={`text-retro-blue font-retro ${isMobile ? 'text-2xl' : 'text-4xl'}`}>PAUSED</h2>
                         </div>
                     )}
                 </div>
 
-                <div className="flex flex-col gap-6 w-full md:w-auto">
-                    <div className="bg-retro-dark p-4 border-2 border-retro-blue rounded-lg">
-                        <h3 className="text-retro-blue font-retro text-xl mb-3 text-center">Next Piece</h3>
-                        <div className="flex justify-center">
-                            {renderNextPiece()}
+                {/* Right panel - next piece and controls */}
+                <div className={`flex ${isMobile ? 'flex-row w-full justify-between' : 'flex-col'} gap-4`}>
+                    {/* Next piece - now maintains exact same appearance */}
+                    <div className={`bg-retro-dark border-2 border-retro-blue rounded-lg ${isMobile ? 'w-[48%]' : 'w-full'}`}>
+                        {renderNextPiece()}
+                    </div>
+
+                    {/* Mobile controls - now on the right side */}
+                    {isMobile && (
+                        <div className="w-[48%] grid grid-cols-3 grid-rows-3 gap-2 p-1">
+                            <div className="col-start-2">
+                                <button
+                                    onClick={rotatePiece}
+                                    className="w-full h-full bg-retro-purple text-white text-lg flex items-center justify-center"
+                                >
+                                    ↻
+                                </button>
+                            </div>
+                            <button
+                                onClick={() => movePiece('left')}
+                                className="w-full h-full bg-retro-purple text-white text-lg flex items-center justify-center"
+                            >
+                                ←
+                            </button>
+                            <button
+                                onClick={() => setIsPaused(prev => !prev)}
+                                className="w-full h-full bg-retro-blue text-white text-lg flex items-center justify-center"
+                            >
+                                {isPaused ? '▶' : '⏸'}
+                            </button>
+                            <button
+                                onClick={() => movePiece('right')}
+                                className="w-full h-full bg-retro-purple text-white text-lg flex items-center justify-center"
+                            >
+                                →
+                            </button>
+                            <button
+                                onClick={() => movePiece('down')}
+                                className="w-full h-full bg-retro-purple text-white text-lg flex items-center justify-center"
+                            >
+                                ↓
+                            </button>
+                            <button
+                                onClick={hardDrop}
+                                className="w-full h-full bg-retro-yellow text-retro-dark text-lg flex items-center justify-center"
+                            >
+                                ⬇
+                            </button>
                         </div>
-                    </div>
-
-                    <div className="md:hidden bg-retro-dark p-4 border-2 border-retro-purple rounded-lg grid grid-cols-3 gap-2">
-                        <div></div>
-                        <button
-                            onClick={rotatePiece}
-                            className="bg-retro-purple text-white p-3 rounded"
-                        >
-                            ↻
-                        </button>
-                        <div></div>
-
-                        <button
-                            onClick={() => movePiece('left')}
-                            className="bg-retro-purple text-white p-3 rounded"
-                        >
-                            ←
-                        </button>
-                        <button
-                            onClick={() => setIsPaused(prev => !prev)}
-                            className="bg-retro-blue text-white p-3 rounded"
-                        >
-                            {isPaused ? '▶' : '⏸'}
-                        </button>
-                        <button
-                            onClick={() => movePiece('right')}
-                            className="bg-retro-purple text-white p-3 rounded"
-                        >
-                            →
-                        </button>
-
-                        <div></div>
-                        <button
-                            onClick={() => movePiece('down')}
-                            className="bg-retro-purple text-white p-3 rounded"
-                        >
-                            ↓
-                        </button>
-                        <button
-                            onClick={hardDrop}
-                            className="bg-retro-yellow text-retro-dark p-3 rounded"
-                        >
-                            ⬇
-                        </button>
-                    </div>
+                    )}
                 </div>
             </div>
 
+            {/* Instructions - responsive */}
             {showInstructions && (
-                <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4">
-                    <div className="bg-retro-dark border-4 border-retro-yellow rounded-lg p-6 max-w-2xl w-full mx-4">
-                        <h2 className="text-retro-green font-retro text-4xl mb-6 text-center">HOW TO PLAY TETRIS</h2>
+                <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-2">
+                    <div className={`bg-retro-dark border-4 border-retro-yellow rounded-lg ${isMobile ? 'p-4' : 'p-6'} max-w-2xl w-full mx-2 overflow-y-auto max-h-[90vh]`}>
+                        <h2 className={`text-retro-green font-retro ${isMobile ? 'text-2xl' : 'text-4xl'} mb-4 text-center`}>HOW TO PLAY TETRIS</h2>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4 mb-4`}>
                             <div>
-                                <h3 className="text-retro-blue font-retro text-2xl mb-3">Objective</h3>
-                                <p className="text-white mb-4">
+                                <h3 className={`text-retro-blue font-retro ${isMobile ? 'text-lg' : 'text-2xl'} mb-2`}>Objective</h3>
+                                <p className={`text-white ${isMobile ? 'text-sm' : 'mb-4'}`}>
                                     Arrange the falling blocks to complete horizontal lines.
                                     Each completed line will clear and earn you points.
                                 </p>
-                                <h3 className="text-retro-pink font-retro text-2xl mb-3">Scoring</h3>
-                                <ul className="text-white space-y-2">
+                                <h3 className={`text-retro-pink font-retro ${isMobile ? 'text-lg' : 'text-2xl'} mb-2`}>Scoring</h3>
+                                <ul className={`text-white ${isMobile ? 'text-xs space-y-1' : 'space-y-2'}`}>
                                     <li>• 1 line: 100 × level</li>
                                     <li>• 2 lines: 300 × level</li>
                                     <li>• 3 lines: 500 × level</li>
@@ -540,13 +555,25 @@ const TetrisGame = () => {
                             </div>
 
                             <div>
-                                <h3 className="text-retro-yellow font-retro text-2xl mb-3">Controls</h3>
-                                <ul className="text-white space-y-3">
-                                    <li>• <span className="text-retro-blue">← →</span> or <span className="text-retro-blue">A/D</span>: Move piece</li>
-                                    <li>• <span className="text-retro-blue">↓</span> or <span className="text-retro-blue">S</span>: Soft drop</li>
-                                    <li>• <span className="text-retro-blue">↑</span> or <span className="text-retro-blue">W</span>: Rotate piece</li>
-                                    <li>• <span className="text-retro-blue">Space</span>: Hard drop (instant)</li>
-                                    <li>• <span className="text-retro-blue">P</span>: Pause/Resume game</li>
+                                <h3 className={`text-retro-yellow font-retro ${isMobile ? 'text-lg' : 'text-2xl'} mb-2`}>Controls</h3>
+                                <ul className={`text-white ${isMobile ? 'text-xs space-y-1' : 'space-y-3'}`}>
+                                    {isMobile ? (
+                                        <>
+                                            <li>• Left/Right buttons to move</li>
+                                            <li>• ↻ button to rotate</li>
+                                            <li>• ↓ button for soft drop</li>
+                                            <li>• ⬇ button for hard drop</li>
+                                            <li>• ⏸ button to pause</li>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <li>• <span className="text-retro-blue">← →</span> or <span className="text-retro-blue">A/D</span>: Move piece</li>
+                                            <li>• <span className="text-retro-blue">↓</span> or <span className="text-retro-blue">S</span>: Soft drop</li>
+                                            <li>• <span className="text-retro-blue">↑</span> or <span className="text-retro-blue">W</span>: Rotate piece</li>
+                                            <li>• <span className="text-retro-blue">Space</span>: Hard drop (instant)</li>
+                                            <li>• <span className="text-retro-blue">P</span>: Pause/Resume game</li>
+                                        </>
+                                    )}
                                 </ul>
                             </div>
                         </div>
@@ -554,7 +581,7 @@ const TetrisGame = () => {
                         <div className="text-center">
                             <button
                                 onClick={startGame}
-                                className="bg-retro-pink hover:bg-retro-pink-dark text-white font-retro px-8 py-3 rounded-lg text-xl"
+                                className={`bg-retro-pink text-white font-retro ${isMobile ? 'px-4 py-2 text-sm' : 'px-8 py-3 text-xl'} rounded-lg`}
                             >
                                 START GAME
                             </button>

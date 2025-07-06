@@ -214,20 +214,20 @@ function Messages({ game }) {
     }
 
     return (
-        <div className="bg-white rounded-lg border-2 border-retro-green overflow-hidden">
-            <form onSubmit={handleSubmit} className="p-4 border-b border-gray-200">
-                <div className="flex">
+        <div className="bg-white rounded-lg border-2 border-retro-green overflow-hidden w-full">
+            <form onSubmit={handleSubmit} className="p-2 sm:p-4 border-b border-gray-200">
+                <div className="flex flex-col sm:flex-row gap-2">
                     <input
                         type="text"
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
                         placeholder="Write a message..."
-                        className="flex-1 bg-gray-100 border-2 border-retro-yellow text-gray-800 px-3 py-2 rounded-l focus:outline-none focus:ring-2 focus:ring-retro-yellow"
+                        className="flex-1 bg-gray-100 border-2 border-retro-yellow text-gray-800 px-3 py-2 rounded sm:rounded-r-none focus:outline-none focus:ring-2 focus:ring-retro-yellow"
                         maxLength={500}
                     />
                     <button
                         type="submit"
-                        className="bg-retro-green hover:bg-retro-green-dark text-white font-retro px-4 py-2 rounded-r"
+                        className="bg-retro-green hover:bg-retro-green-dark text-white font-retro px-4 py-2 rounded sm:rounded-l-none"
                         disabled={!newMessage.trim()}
                     >
                         Send

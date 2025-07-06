@@ -3,10 +3,31 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { submitScore, getHighScore } from '../logic/scoreService'
 
-const ROWS = 6
-const COLS = 7
-const CELL_SIZE = 80
-const INITIAL_SPEED = 800
+const getGameDimensions = () => {
+    if (window.innerWidth <= 640) { //Mobile//
+        return {
+            rows: 6,
+            cols: 7,
+            cellSize: Math.min(Math.floor(window.innerWidth * 0.9 / 7), 60),
+            speed: 600
+        }
+    } else if (window.innerWidth <= 1024) { //Tablet//
+        return {
+            rows: 6,
+            cols: 7,
+            cellSize: 70,
+            speed: 800
+        }
+    } else { //Desktop//
+        return {
+            rows: 6,
+            cols: 7,
+            cellSize: 80,
+            speed: 800
+        }
+    }
+}
+
 const WINNING_LENGTH = 4
 
 const ConnectFourGame = () => {
@@ -14,7 +35,9 @@ const ConnectFourGame = () => {
     const gameId = parseInt(location.pathname.split('/')[2])
     const navigate = useNavigate()
     const { user } = useAuth()
-    const [board, setBoard] = useState(Array(ROWS).fill().map(() => Array(COLS).fill(null)))
+    const [dimensions, setDimensions] = useState(getGameDimensions())
+    const [board, setBoard] = useState(
+        Array(dimensions.rows).fill().map(() => Array(dimensions.cols).fill(null)))
     const [currentPlayer, setCurrentPlayer] = useState('red')
     const [gameOver, setGameOver] = useState(false)
     const [winner, setWinner] = useState(null)
@@ -23,11 +46,26 @@ const ConnectFourGame = () => {
     const [highScore, setHighScore] = useState(0)
     const [level, setLevel] = useState(1)
     const [showInstructions, setShowInstructions] = useState(true)
-    const speedRef = useRef(INITIAL_SPEED)
+    const speedRef = useRef(dimensions.speed)
+
+    useEffect(() => {
+        const handleResize = () => {
+            const newDimensions = getGameDimensions()
+            setDimensions(newDimensions)
+            speedRef.current = newDimensions.speed
+
+            setBoard(
+                Array(newDimensions.rows).fill().map(() => Array(newDimensions.cols).fill(null))
+            )
+        }
+
+        window.addEventListener('resize', handleResize)
+        return () => window.removeEventListener('resize', handleResize)
+    }, [])
 
     const initializeBoard = useCallback(() => {
-        return Array(ROWS).fill().map(() => Array(COLS).fill(null))
-    }, [])
+        return Array(dimensions.rows).fill().map(() => Array(dimensions.cols).fill(null))
+    }, [dimensions])
 
     const isValidMove = useCallback((col) => {
         return board[0][col] === null
@@ -39,8 +77,8 @@ const ConnectFourGame = () => {
         setGameOver(false)
         setWinner(null)
         setLevel(prevLevel => prevLevel + 1)
-        speedRef.current = Math.max(100, INITIAL_SPEED - (level * 100))
-    }, [initializeBoard, level])
+        speedRef.current = Math.max(100, dimensions.speed - (level * 100))
+    }, [initializeBoard, level, dimensions.speed])
 
     const handleWin = useCallback((player) => {
         setGameOver(true)
@@ -61,7 +99,7 @@ const ConnectFourGame = () => {
         if (gameOver || isPaused || currentPlayer !== 'red' || !isValidMove(col)) return
 
         const newBoard = [...board]
-        for (let row = ROWS - 1; row >= 0; row--) {
+        for (let row = dimensions.rows - 1; row >= 0; row--) {
             if (newBoard[row][col] === null) {
                 newBoard[row][col] = 'red'
                 break
@@ -71,7 +109,7 @@ const ConnectFourGame = () => {
         setBoard(newBoard)
         checkWin(newBoard, 'red')
         setCurrentPlayer('yellow')
-    }, [board, currentPlayer, gameOver, isPaused, isValidMove])
+    }, [board, currentPlayer, gameOver, isPaused, isValidMove, dimensions.rows])
 
     const makeCpuMove = useCallback(() => {
         if (gameOver || isPaused || currentPlayer !== 'yellow') return
@@ -109,7 +147,7 @@ const ConnectFourGame = () => {
             //Random valid move as fallback//
             () => {
                 const validColumns = []
-                for (let c = 0; c < COLS; c++) {
+                for (let c = 0; c < dimensions.cols; c++) {
                     if (isValidMove(c)) validColumns.push(c)
                 }
                 return validColumns.length > 0
@@ -127,7 +165,7 @@ const ConnectFourGame = () => {
         if (col !== null) {
             setTimeout(() => {
                 const newBoard = [...board]
-                for (let row = ROWS - 1; row >= 0; row--) {
+                for (let row = dimensions.rows - 1; row >= 0; row--) {
                     if (newBoard[row][col] === null) {
                         newBoard[row][col] = 'yellow'
                         break
@@ -139,7 +177,7 @@ const ConnectFourGame = () => {
                 setCurrentPlayer('red')
             }, Math.max(100, 600 - (level * 50)))
         }
-    }, [board, currentPlayer, gameOver, isPaused, isValidMove, level])
+    }, [board, currentPlayer, gameOver, isPaused, isValidMove, level, dimensions])
 
     const findWinningMove = useCallback((board, player) => {
         const checkLine = (cells) => {
@@ -152,21 +190,21 @@ const ConnectFourGame = () => {
             return -1
         }
 
-        for (let row = 0; row < ROWS; row++) {
-            for (let col = 0; col <= COLS - WINNING_LENGTH; col++) {
+        for (let row = 0; row < dimensions.rows; row++) {
+            for (let col = 0; col <= dimensions.cols - WINNING_LENGTH; col++) {
                 const line = board[row].slice(col, col + WINNING_LENGTH)
                 const winIdx = checkLine(line)
                 if (winIdx !== -1) {
                     const resultCol = col + winIdx
-                    if (row === ROWS - 1 || board[row + 1][resultCol] !== null) {
+                    if (row === dimensions.rows - 1 || board[row + 1][resultCol] !== null) {
                         return resultCol
                     }
                 }
             }
         }
 
-        for (let col = 0; col < COLS; col++) {
-            for (let row = 0; row <= ROWS - WINNING_LENGTH; row++) {
+        for (let col = 0; col < dimensions.cols; col++) {
+            for (let row = 0; row <= dimensions.rows - WINNING_LENGTH; row++) {
                 const line = []
                 for (let i = 0; i < WINNING_LENGTH; i++) {
                     line.push(board[row + i][col])
@@ -178,8 +216,8 @@ const ConnectFourGame = () => {
             }
         }
 
-        for (let row = 0; row <= ROWS - WINNING_LENGTH; row++) {
-            for (let col = 0; col <= COLS - WINNING_LENGTH; col++) {
+        for (let row = 0; row <= dimensions.rows - WINNING_LENGTH; row++) {
+            for (let col = 0; col <= dimensions.cols - WINNING_LENGTH; col++) {
                 const lineDR = []
                 const lineUR = []
                 for (let i = 0; i < WINNING_LENGTH; i++) {
@@ -191,7 +229,7 @@ const ConnectFourGame = () => {
                 if (winIdxDR !== -1) {
                     const resultCol = col + winIdxDR
                     const resultRow = row + winIdxDR
-                    if (resultRow === ROWS - 1 || board[resultRow + 1][resultCol] !== null) {
+                    if (resultRow === dimensions.rows - 1 || board[resultRow + 1][resultCol] !== null) {
                         return resultCol
                     }
                 }
@@ -200,7 +238,7 @@ const ConnectFourGame = () => {
                 if (winIdxUR !== -1) {
                     const resultCol = col + winIdxUR
                     const resultRow = row + WINNING_LENGTH - 1 - winIdxUR
-                    if (resultRow === ROWS - 1 || board[resultRow + 1][resultCol] !== null) {
+                    if (resultRow === dimensions.rows - 1 || board[resultRow + 1][resultCol] !== null) {
                         return resultCol
                     }
                 }
@@ -208,7 +246,7 @@ const ConnectFourGame = () => {
         }
 
         return null
-    }, [])
+    }, [dimensions])
 
     const findForkOpportunity = useCallback((board, player) => {
         if (level < 3) return null
@@ -216,11 +254,11 @@ const ConnectFourGame = () => {
         const forkThreshold = level > 5 ? 2 : 1
         const potentialMoves = []
 
-        for (let col = 0; col < COLS; col++) {
+        for (let col = 0; col < dimensions.cols; col++) {
             if (!isValidMove(col)) continue
 
             const testBoard = JSON.parse(JSON.stringify(board))
-            for (let row = ROWS - 1; row >= 0; row--) {
+            for (let row = dimensions.rows - 1; row >= 0; row--) {
                 if (testBoard[row][col] === null) {
                     testBoard[row][col] = player
                     break
@@ -228,7 +266,7 @@ const ConnectFourGame = () => {
             }
 
             let winningLinesCreated = 0
-            for (let testCol = 0; testCol < COLS; testCol++) {
+            for (let testCol = 0; testCol < dimensions.cols; testCol++) {
                 if (findWinningMove(testBoard, player) === testCol) {
                     winningLinesCreated++
                 }
@@ -245,7 +283,7 @@ const ConnectFourGame = () => {
         }
 
         return null
-    }, [findWinningMove, isValidMove, level])
+    }, [findWinningMove, isValidMove, level, dimensions])
 
     const checkWin = useCallback((board, player) => {
         //Check all directions for a win//
@@ -259,8 +297,8 @@ const ConnectFourGame = () => {
         }
 
         //Check horizontal//
-        for (let row = 0; row < ROWS; row++) {
-            for (let col = 0; col <= COLS - WINNING_LENGTH; col++) {
+        for (let row = 0; row < dimensions.rows; row++) {
+            for (let col = 0; col <= dimensions.cols - WINNING_LENGTH; col++) {
                 if (checkDirection(row, col, 0, 1)) {
                     handleWin(player)
                     return
@@ -269,8 +307,8 @@ const ConnectFourGame = () => {
         }
 
         //Check vertical//
-        for (let row = 0; row <= ROWS - WINNING_LENGTH; row++) {
-            for (let col = 0; col < COLS; col++) {
+        for (let row = 0; row <= dimensions.rows - WINNING_LENGTH; row++) {
+            for (let col = 0; col < dimensions.cols; col++) {
                 if (checkDirection(row, col, 1, 0)) {
                     handleWin(player)
                     return
@@ -279,8 +317,8 @@ const ConnectFourGame = () => {
         }
 
         //Check diagonal (top-left to bottom-right)//
-        for (let row = 0; row <= ROWS - WINNING_LENGTH; row++) {
-            for (let col = 0; col <= COLS - WINNING_LENGTH; col++) {
+        for (let row = 0; row <= dimensions.rows - WINNING_LENGTH; row++) {
+            for (let col = 0; col <= dimensions.cols - WINNING_LENGTH; col++) {
                 if (checkDirection(row, col, 1, 1)) {
                     handleWin(player)
                     return
@@ -289,8 +327,8 @@ const ConnectFourGame = () => {
         }
 
         //Check diagonal (bottom-left to top-right)//
-        for (let row = WINNING_LENGTH - 1; row < ROWS; row++) {
-            for (let col = 0; col <= COLS - WINNING_LENGTH; col++) {
+        for (let row = WINNING_LENGTH - 1; row < dimensions.rows; row++) {
+            for (let col = 0; col <= dimensions.cols - WINNING_LENGTH; col++) {
                 if (checkDirection(row, col, -1, 1)) {
                     handleWin(player)
                     return
@@ -300,9 +338,10 @@ const ConnectFourGame = () => {
 
         //Check for draw//
         if (board.every(row => row.every(cell => cell !== null))) {
-            handleDraw()
+            setGameOver(true)
+            setWinner('draw')
         }
-    }, [])
+    }, [dimensions, handleWin])
 
     const resetGame = useCallback(() => {
         setBoard(initializeBoard())
@@ -312,8 +351,8 @@ const ConnectFourGame = () => {
         setScore(0)
         setLevel(1)
         setShowInstructions(false)
-        speedRef.current = INITIAL_SPEED
-    }, [initializeBoard])
+        speedRef.current = dimensions.speed
+    }, [initializeBoard, dimensions])
 
     useEffect(() => {
         const handleKeyDown = (e) => {
@@ -382,21 +421,32 @@ const ConnectFourGame = () => {
 
     const renderBoard = () => {
         return (
-            <div className="relative bg-blue-700 p-2 rounded-lg" style={{ padding: '10px' }}>
-                <div className="flex mb-2">
-                    {Array(COLS).fill().map((_, col) => (
+            <div className="relative bg-blue-700 p-1 sm:p-2 rounded-lg">
+                {/* Column indicators */}
+                <div className="flex mb-1 sm:mb-2">
+                    {Array(dimensions.cols).fill().map((_, col) => (
                         <div
                             key={`indicator-${col}`}
                             className="flex-1 text-center text-white font-bold cursor-pointer hover:bg-blue-600 rounded"
                             onClick={() => makeMove(col)}
-                            style={{ fontSize: '1.2rem', padding: '5px 0' }}
+                            style={{
+                                fontSize: `${Math.min(dimensions.cellSize * 0.3, 20)}px`,
+                                padding: '3px 0'
+                            }}
                         >
                             {col + 1}
                         </div>
                     ))}
                 </div>
 
-                <div className="grid grid-cols-7 gap-1" style={{ gap: '4px' }}>
+                {/* Game board */}
+                <div
+                    className="grid gap-1"
+                    style={{
+                        gridTemplateColumns: `repeat(${dimensions.cols}, 1fr)`,
+                        gap: '2px'
+                    }}
+                >
                     {board.map((row, rowIndex) => (
                         row.map((cell, colIndex) => (
                             <div
@@ -421,91 +471,101 @@ const ConnectFourGame = () => {
 
     return (
         <div className="fixed inset-0 bg-retro-dark flex flex-col">
-            <div className="bg-retro-purple p-4 flex justify-between items-center">
-                <div className="font-retro text-white text-xl">
+            {/* Header with game info */}
+            <div className="bg-retro-purple p-2 sm:p-4 flex flex-col sm:flex-row justify-between items-center">
+                <div className="font-retro text-white text-sm sm:text-xl mb-2 sm:mb-0 text-center sm:text-left">
                     Score: <span className="text-retro-yellow">{score}</span> |
-                    High Score: <span className="text-retro-green">{highScore}</span> |
+                    High: <span className="text-retro-green">{highScore}</span> |
                     Level: <span className="text-retro-blue">{level}</span> |
                     Turn: <span className={currentPlayer === 'red' ? 'text-red-500' : 'text-yellow-400'}>
-                        {currentPlayer === 'red' ? 'Player' : 'CPU'}
+                        {currentPlayer === 'red' ? 'You' : 'CPU'}
                     </span>
                 </div>
 
-                <div className="flex space-x-3">
+                <div className="flex space-x-2 sm:space-x-3">
                     <button
                         onClick={() => setIsPaused(prev => !prev)}
-                        className="bg-retro-blue hover:bg-retro-blue-dark text-white font-retro px-4 py-2 rounded"
+                        className="bg-retro-blue hover:bg-retro-blue-dark text-white font-retro px-3 py-1 sm:px-4 sm:py-2 rounded text-sm sm:text-base"
                     >
                         {isPaused ? 'Resume' : 'Pause'}
                     </button>
 
                     <button
                         onClick={() => navigate('/home')}
-                        className="bg-retro-pink hover:bg-retro-pink-dark text-white font-retro px-4 py-2 rounded"
+                        className="bg-retro-pink hover:bg-retro-pink-dark text-white font-retro px-3 py-1 sm:px-4 sm:py-2 rounded text-sm sm:text-base"
                     >
                         Exit
                     </button>
                 </div>
             </div>
 
-            <div className="flex-1 flex flex-col items-center justify-center p-2">
+            {/* Main game area */}
+            <div className="flex-1 flex flex-col items-center justify-center p-1 sm:p-2 overflow-auto">
                 <div
                     className="relative bg-black border-4 border-retro-green rounded-lg"
                     style={{
-                        width: `${COLS * CELL_SIZE - 20}px`,
-                        height: `${ROWS * CELL_SIZE + 60}px`,
-                        padding: '10px'
+                        width: `${dimensions.cols * dimensions.cellSize + 20}px`,
+                        maxWidth: '95vw',
+                        padding: '8px'
                     }}
                 >
                     {renderBoard()}
 
+                    {/* Game over overlay */}
                     {gameOver && winner !== 'red' && (
                         <div className="absolute inset-0 bg-black bg-opacity-70 flex flex-col items-center justify-center">
-                            <h2 className="text-retro-pink font-retro text-4xl mb-6">GAME OVER</h2>
-                            <p className="text-white text-xl mb-4">Your score: {score}</p>
+                            <h2 className="text-retro-pink font-retro text-2xl sm:text-4xl mb-4 sm:mb-6">
+                                {winner === 'draw' ? 'DRAW!' : 'GAME OVER'}
+                            </h2>
+                            <p className="text-white text-lg sm:text-xl mb-3 sm:mb-4">Your score: {score}</p>
                             <button
                                 onClick={resetGame}
-                                className="bg-retro-yellow hover:bg-retro-yellow-dark text-retro-dark font-retro px-6 py-3 rounded-lg text-xl"
+                                className="bg-retro-yellow hover:bg-retro-yellow-dark text-retro-dark font-retro px-4 py-2 sm:px-6 sm:py-3 rounded-lg text-lg sm:text-xl"
                             >
                                 Play Again
                             </button>
                         </div>
                     )}
 
+                    {/* Paused overlay */}
                     {isPaused && !gameOver && !showInstructions && (
                         <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                            <h2 className="text-retro-blue font-retro text-4xl">PAUSED</h2>
+                            <h2 className="text-retro-blue font-retro text-2xl sm:text-4xl">PAUSED</h2>
                         </div>
                     )}
 
+                    {/* Instructions overlay */}
                     {showInstructions && (
-                        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4">
-                            <div className="bg-retro-dark border-4 border-retro-yellow rounded-lg p-6 max-w-2xl w-full mx-4">
-                                <h2 className="text-retro-green font-retro text-4xl mb-6 text-center">HOW TO PLAY CONNECT FOUR</h2>
+                        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-2 sm:p-4">
+                            <div className="bg-retro-dark border-4 border-retro-yellow rounded-lg p-4 sm:p-6 max-w-2xl w-full mx-2 sm:mx-4 overflow-y-auto max-h-[90vh]">
+                                <h2 className="text-retro-green font-retro text-2xl sm:text-4xl mb-4 sm:mb-6 text-center">
+                                    HOW TO PLAY CONNECT FOUR
+                                </h2>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
                                     <div>
-                                        <h3 className="text-retro-blue font-retro text-2xl mb-3">Objective</h3>
-                                        <p className="text-white mb-4">
+                                        <h3 className="text-retro-blue font-retro text-xl sm:text-2xl mb-2 sm:mb-3">Objective</h3>
+                                        <p className="text-white mb-3 sm:mb-4 text-sm sm:text-base">
                                             Connect four of your discs in a row (horizontally, vertically, or diagonally) before the CPU does.
                                         </p>
-                                        <h3 className="text-retro-pink font-retro text-2xl mb-3">Scoring</h3>
-                                        <ul className="text-white space-y-2">
+                                        <h3 className="text-retro-pink font-retro text-xl sm:text-2xl mb-2 sm:mb-3">Scoring</h3>
+                                        <ul className="text-white space-y-1 sm:space-y-2 text-sm sm:text-base">
                                             <li>• Win: +100 points × level</li>
                                             <li>• CPU gets smarter each level</li>
                                         </ul>
                                     </div>
 
                                     <div>
-                                        <h3 className="text-retro-yellow font-retro text-2xl mb-3">Controls</h3>
-                                        <ul className="text-white space-y-3">
+                                        <h3 className="text-retro-yellow font-retro text-xl sm:text-2xl mb-2 sm:mb-3">Controls</h3>
+                                        <ul className="text-white space-y-1 sm:space-y-3 text-sm sm:text-base">
                                             <li>• <span className="text-retro-blue">1-7</span> keys: Drop disc</li>
                                             <li>• <span className="text-retro-blue">Click</span> column number</li>
+                                            <li>• <span className="text-retro-blue">Touch</span> buttons on mobile</li>
                                             <li>• <span className="text-retro-blue">P</span>: Pause game</li>
                                         </ul>
 
-                                        <h3 className="text-retro-pink font-retro text-2xl mt-6 mb-3">Game Rules</h3>
-                                        <ul className="text-white space-y-2">
+                                        <h3 className="text-retro-pink font-retro text-xl sm:text-2xl mt-4 sm:mt-6 mb-2 sm:mb-3">Game Rules</h3>
+                                        <ul className="text-white space-y-1 sm:space-y-2 text-sm sm:text-base">
                                             <li>• Red discs: You</li>
                                             <li>• Yellow discs: CPU</li>
                                             <li>• Win to automatically advance</li>
@@ -518,7 +578,7 @@ const ConnectFourGame = () => {
                                 <div className="text-center">
                                     <button
                                         onClick={startGame}
-                                        className="bg-retro-pink hover:bg-retro-pink-dark text-white font-retro px-8 py-3 rounded-lg text-xl"
+                                        className="bg-retro-pink hover:bg-retro-pink-dark text-white font-retro px-6 py-2 sm:px-8 sm:py-3 rounded-lg text-lg sm:text-xl"
                                     >
                                         START GAME
                                     </button>
@@ -529,13 +589,14 @@ const ConnectFourGame = () => {
                 </div>
             </div>
 
-            <div className="md:hidden bg-retro-dark p-4 grid grid-cols-7 gap-1">
-                {Array(COLS).fill().map((_, col) => (
+            {/* Mobile controls */}
+            <div className="md:hidden bg-retro-dark p-2 grid grid-cols-7 gap-1">
+                {Array(dimensions.cols).fill().map((_, col) => (
                     <button
                         key={`mobile-btn-${col}`}
                         onClick={() => makeMove(col)}
-                        className="bg-retro-purple text-white p-3 rounded font-bold"
-                        style={{ fontSize: '1.1rem' }}
+                        className="bg-retro-purple text-white p-2 rounded font-bold active:bg-retro-purple-dark"
+                        style={{ fontSize: `${Math.min(dimensions.cellSize * 0.3, 18)}px` }}
                     >
                         {col + 1}
                     </button>

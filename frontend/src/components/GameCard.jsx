@@ -61,8 +61,8 @@ function GameCard({ game, userId, onSelect, isShowingScores = false, isShowingMe
     }
 
     return (
-        <div className="flex flex-col">
-            <div className="bg-white rounded-lg overflow-hidden shadow-retro hover:shadow-retro-lg transition-shadow cursor-pointer h-full">
+        <div className="flex flex-col w-full max-w-full">
+            <div className="bg-white rounded-lg overflow-hidden shadow-retro hover:shadow-retro-lg transition-shadow cursor-pointer h-full w-full">
                 <div className="relative pt-[56.25%] bg-gray-100">
                     {localGame.image ? (
                         <img
@@ -87,8 +87,8 @@ function GameCard({ game, userId, onSelect, isShowingScores = false, isShowingMe
                     <p className="text-gray-600 mb-4 line-clamp-2 h-12">
                         {localGame.description}
                     </p>
-                    <div className="flex justify-between items-center">
-                        <div className="flex space-x-3">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                        <div className="flex justify-between sm:justify-start sm:space-x-3">
                             <button
                                 onClick={handleFavorite}
                                 className={`flex items-center space-x-1 px-2 py-1 rounded ${userFavorited ? 'bg-retro-purple/10 text-retro-pink' : 'text-gray-500 hover:bg-gray-100'}`}
@@ -125,7 +125,7 @@ function GameCard({ game, userId, onSelect, isShowingScores = false, isShowingMe
                                 <span className="text-sm">{localGame.dislikes.length}</span>
                             </button>
                         </div>
-                        <div className="flex space-x-2">
+                        <div className="flex justify-between sm:justify-end sm:space-x-2">
                             <button
                                 onClick={handlePlay}
                                 className="bg-retro-blue hover:bg-retro-blue-dark text-white font-retro px-3 py-1 rounded text-sm flex items-center"
@@ -150,19 +150,19 @@ function GameCard({ game, userId, onSelect, isShowingScores = false, isShowingMe
                                         d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                                     />
                                 </svg>
-                                Play
+                                <span className="hidden sm:inline">Play</span>
                             </button>
                             <button
                                 onClick={handleScoresClick}
                                 className={`text-retro-blue hover:underline text-sm ${isShowingScores ? 'font-bold' : ''}`}
                             >
-                                {isShowingScores ? 'Hide Scores' : 'Scores'}
+                                {isShowingScores ? 'Hide' : 'Scores'}
                             </button>
                             <button
                                 onClick={handleMessagesClick}
                                 className={`text-retro-green hover:underline text-sm ${isShowingMessages ? 'font-bold' : ''}`}
                             >
-                                {isShowingMessages ? 'Hide Chat' : 'Chat'}
+                                {isShowingMessages ? 'Hide' : 'Chat'}
                             </button>
                         </div>
                     </div>
@@ -170,9 +170,9 @@ function GameCard({ game, userId, onSelect, isShowingScores = false, isShowingMe
             </div>
 
             {(isShowingScores || isShowingMessages) && (
-                <div className="mt-2 w-full">
+                <div className="mt-2 w-full max-w-full overflow-x-auto">
                     {isShowingScores && (
-                        <div className="bg-white rounded-lg shadow-md p-4 border-2 border-retro-blue">
+                        <div className="bg-white rounded-lg shadow-md p-2 sm:p-4 border-2 border-retro-blue w-full">
                             <h4 className="text-retro-blue font-retro text-lg mb-2">
                                 {localGame.name} Scores
                             </h4>
@@ -180,7 +180,7 @@ function GameCard({ game, userId, onSelect, isShowingScores = false, isShowingMe
                         </div>
                     )}
                     {isShowingMessages && (
-                        <div className="bg-white rounded-lg shadow-md p-4 border-2 border-retro-green">
+                        <div className="bg-white rounded-lg shadow-md p-2 sm:p-4 border-2 border-retro-green w-full">
                             <h4 className="text-retro-green font-retro text-lg mb-2">
                                 {localGame.name} Chat
                             </h4>
