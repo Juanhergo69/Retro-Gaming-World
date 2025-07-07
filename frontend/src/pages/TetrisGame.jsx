@@ -4,8 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { submitScore, getHighScore } from '../logic/scoreService/'
 
 const COLS = 10
-const ROWS = 20
-const CELL_SIZE = 30
+const ROWS = 18
 const INITIAL_SPEED = 800
 const SPEED_DECREMENT = 50
 const LINES_PER_LEVEL = 10
@@ -384,7 +383,7 @@ const TetrisGame = () => {
                 {row.map((cell, colIndex) => (
                     <div
                         key={`${rowIndex}-${colIndex}`}
-                        className={`w-[30px] h-[30px] border border-gray-800 ${cell || 'bg-black'}`}
+                        className={`${isMobile ? 'w-[25px] h-[25px]' : 'w-[30px] h-[30px]'} border border-gray-800 ${cell || 'bg-black'}`}
                     />
                 ))}
             </div>
@@ -445,15 +444,13 @@ const TetrisGame = () => {
                 </div>
             </div>
 
-            {/* Main game area - vertical stack on mobile */}
-            <div className={`flex-1 flex ${isMobile ? 'flex-col' : 'flex-row'} items-center justify-center p-2 gap-4 overflow-auto`}>
-                {/* Game board */}
+            <div className={`flex-1 flex ${isMobile ? 'flex-col' : 'flex-row'} items-center justify-center p-2 gap-4 overflow-hidden`}>
                 <div
                     className="relative bg-black border-4 border-retro-green"
                     style={{
-                        width: `${COLS * CELL_SIZE + 8}px`,
-                        height: `${ROWS * CELL_SIZE + 8}px`,
-                        minWidth: `${COLS * CELL_SIZE + 8}px`,
+                        width: `${COLS * (isMobile ? 25 : 30) + 8}px`,
+                        height: `${ROWS * (isMobile ? 25 : 30) + 8}px`,
+                        minWidth: `${COLS * (isMobile ? 25 : 30) + 8}px`,
                         maxWidth: '100%'
                     }}
                 >
@@ -479,51 +476,57 @@ const TetrisGame = () => {
                     )}
                 </div>
 
-                {/* Right panel - next piece and controls */}
-                <div className={`flex ${isMobile ? 'flex-row w-full justify-between' : 'flex-col'} gap-4`}>
-                    {/* Next piece - now maintains exact same appearance */}
+                <div className={`flex ${isMobile ? 'flex-row w-full justify-between mt-2' : 'flex-col'} gap-4`}>
                     <div className={`bg-retro-dark border-2 border-retro-blue rounded-lg ${isMobile ? 'w-[48%]' : 'w-full'}`}>
                         {renderNextPiece()}
                     </div>
 
-                    {/* Mobile controls - now on the right side */}
                     {isMobile && (
-                        <div className="w-[48%] grid grid-cols-3 grid-rows-3 gap-2 p-1">
-                            <div className="col-start-2">
-                                <button
-                                    onClick={rotatePiece}
-                                    className="w-full h-full bg-retro-purple text-white text-lg flex items-center justify-center"
-                                >
-                                    ↻
-                                </button>
-                            </div>
+                        <div className="w-full bg-retro-dark p-2 grid grid-cols-3 gap-1 touch-none">
+                            <div></div>
+                            <button
+                                onClick={rotatePiece}
+                                className="bg-retro-purple text-white p-2 rounded-md text-lg active:bg-retro-purple-dark touch-pan-y"
+                                aria-label="Rotate piece"
+                            >
+                                ↻
+                            </button>
+                            <div></div>
+
                             <button
                                 onClick={() => movePiece('left')}
-                                className="w-full h-full bg-retro-purple text-white text-lg flex items-center justify-center"
+                                className="bg-retro-purple text-white p-2 rounded-md text-lg active:bg-retro-purple-dark touch-pan-y"
+                                aria-label="Move left"
                             >
                                 ←
                             </button>
                             <button
                                 onClick={() => setIsPaused(prev => !prev)}
-                                className="w-full h-full bg-retro-blue text-white text-lg flex items-center justify-center"
+                                className="bg-retro-blue text-white p-2 rounded-md text-lg active:bg-retro-blue-dark touch-pan-y"
+                                aria-label={isPaused ? 'Resume' : 'Pause'}
                             >
                                 {isPaused ? '▶' : '⏸'}
                             </button>
                             <button
                                 onClick={() => movePiece('right')}
-                                className="w-full h-full bg-retro-purple text-white text-lg flex items-center justify-center"
+                                className="bg-retro-purple text-white p-2 rounded-md text-lg active:bg-retro-purple-dark touch-pan-y"
+                                aria-label="Move right"
                             >
                                 →
                             </button>
+
+                            <div></div>
                             <button
                                 onClick={() => movePiece('down')}
-                                className="w-full h-full bg-retro-purple text-white text-lg flex items-center justify-center"
+                                className="bg-retro-purple text-white p-2 rounded-md text-lg active:bg-retro-purple-dark touch-pan-y"
+                                aria-label="Move down"
                             >
                                 ↓
                             </button>
                             <button
                                 onClick={hardDrop}
-                                className="w-full h-full bg-retro-yellow text-retro-dark text-lg flex items-center justify-center"
+                                className="bg-retro-yellow text-retro-dark p-2 rounded-md text-lg active:bg-retro-orange touch-pan-y"
+                                aria-label="Hard drop"
                             >
                                 ⬇
                             </button>
@@ -532,7 +535,6 @@ const TetrisGame = () => {
                 </div>
             </div>
 
-            {/* Instructions - responsive */}
             {showInstructions && (
                 <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-2">
                     <div className={`bg-retro-dark border-4 border-retro-yellow rounded-lg ${isMobile ? 'p-4' : 'p-6'} max-w-2xl w-full mx-2 overflow-y-auto max-h-[90vh]`}>
