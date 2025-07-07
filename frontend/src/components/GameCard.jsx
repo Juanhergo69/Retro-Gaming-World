@@ -91,7 +91,7 @@ function GameCard({ game, userId, onSelect, isShowingScores = false, isShowingMe
                         <div className="flex justify-between sm:justify-start sm:space-x-3">
                             <button
                                 onClick={handleFavorite}
-                                className={`flex items-center space-x-1 px-2 py-1 rounded ${userFavorited ? 'bg-retro-purple/10 text-retro-pink' : 'text-gray-500 hover:bg-gray-100'}`}
+                                className={`flex items-center space-x-1 px-2 py-1 rounded ${userFavorited ? 'bg-retro-pink/10 text-retro-red' : 'text-gray-500 hover:bg-gray-100'}`}
                                 aria-label={userFavorited ? 'Remove from favorites' : 'Add to favorites'}
                             >
                                 <svg
@@ -118,7 +118,7 @@ function GameCard({ game, userId, onSelect, isShowingScores = false, isShowingMe
                             </button>
                             <button
                                 onClick={handleDislike}
-                                className={`flex items-center space-x-1 px-2 py-1 rounded ${userDisliked ? 'bg-retro-pink/10 text-retro-pink' : 'text-gray-500 hover:bg-gray-100'}`}
+                                className={`flex items-center space-x-1 px-2 py-1 rounded ${userDisliked ? 'bg-retro-red/10 text-retro-red' : 'text-gray-500 hover:bg-gray-100'}`}
                                 aria-label="Dislike this game"
                             >
                                 <span>👎</span>

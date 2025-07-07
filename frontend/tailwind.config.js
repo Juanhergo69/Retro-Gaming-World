@@ -19,11 +19,11 @@ export default {
                 'retro-green-dark': '#27ae60',
                 'retro-blue': '#3498db',
                 'retro-blue-dark': '#2980b9',
-                'retro-pink': '#e91e63',
+                'retro-pink': '#ff00C8',
                 'retro-pink-dark': '#c2185b',
                 'retro-yellow': '#f1c40f',
                 'retro-yellow-dark': '#f39c12',
-                'retro-red': '#e74c3c',
+                'retro-red': '#f51b05',
             },
             boxShadow: {
                 'retro': '4px 4px 0px 0px rgba(0,0,0,0.2)',
