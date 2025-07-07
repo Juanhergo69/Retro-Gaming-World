@@ -47,6 +47,7 @@ const ConnectFourGame = () => {
     const [level, setLevel] = useState(1)
     const [showInstructions, setShowInstructions] = useState(true)
     const speedRef = useRef(dimensions.speed)
+    const [winningCells, setWinningCells] = useState([])
 
     useEffect(() => {
         const handleResize = () => {
@@ -91,7 +92,10 @@ const ConnectFourGame = () => {
                 return newScore
             })
 
-            setTimeout(advanceLevel, 1000)
+            setTimeout(() => {
+                setWinningCells([])
+                advanceLevel()
+            }, 1000)
         }
     }, [highScore, level, advanceLevel])
 
@@ -286,20 +290,23 @@ const ConnectFourGame = () => {
     }, [findWinningMove, isValidMove, level, dimensions])
 
     const checkWin = useCallback((board, player) => {
-        //Check all directions for a win//
         const checkDirection = (startRow, startCol, deltaRow, deltaCol) => {
+            const cells = []
             for (let i = 0; i < WINNING_LENGTH; i++) {
                 const row = startRow + i * deltaRow
                 const col = startCol + i * deltaCol
-                if (board[row][col] !== player) return false
+                if (board[row][col] !== player) return null
+                cells.push({ row, col })
             }
-            return true
+            return cells
         }
 
         //Check horizontal//
         for (let row = 0; row < dimensions.rows; row++) {
             for (let col = 0; col <= dimensions.cols - WINNING_LENGTH; col++) {
-                if (checkDirection(row, col, 0, 1)) {
+                const winningCells = checkDirection(row, col, 0, 1)
+                if (winningCells) {
+                    setWinningCells(winningCells)
                     handleWin(player)
                     return
                 }
@@ -309,7 +316,9 @@ const ConnectFourGame = () => {
         //Check vertical//
         for (let row = 0; row <= dimensions.rows - WINNING_LENGTH; row++) {
             for (let col = 0; col < dimensions.cols; col++) {
-                if (checkDirection(row, col, 1, 0)) {
+                const winningCells = checkDirection(row, col, 1, 0)
+                if (winningCells) {
+                    setWinningCells(winningCells)
                     handleWin(player)
                     return
                 }
@@ -319,7 +328,9 @@ const ConnectFourGame = () => {
         //Check diagonal (top-left to bottom-right)//
         for (let row = 0; row <= dimensions.rows - WINNING_LENGTH; row++) {
             for (let col = 0; col <= dimensions.cols - WINNING_LENGTH; col++) {
-                if (checkDirection(row, col, 1, 1)) {
+                const winningCells = checkDirection(row, col, 1, 1)
+                if (winningCells) {
+                    setWinningCells(winningCells)
                     handleWin(player)
                     return
                 }
@@ -329,7 +340,9 @@ const ConnectFourGame = () => {
         //Check diagonal (bottom-left to top-right)//
         for (let row = WINNING_LENGTH - 1; row < dimensions.rows; row++) {
             for (let col = 0; col <= dimensions.cols - WINNING_LENGTH; col++) {
-                if (checkDirection(row, col, -1, 1)) {
+                const winningCells = checkDirection(row, col, -1, 1)
+                if (winningCells) {
+                    setWinningCells(winningCells)
                     handleWin(player)
                     return
                 }
@@ -350,6 +363,7 @@ const ConnectFourGame = () => {
         setWinner(null)
         setScore(0)
         setLevel(1)
+        setWinningCells([])
         setShowInstructions(false)
         speedRef.current = dimensions.speed
     }, [initializeBoard, dimensions])
@@ -448,21 +462,28 @@ const ConnectFourGame = () => {
                     }}
                 >
                     {board.map((row, rowIndex) => (
-                        row.map((cell, colIndex) => (
-                            <div
-                                key={`cell-${rowIndex}-${colIndex}`}
-                                className={`rounded-full border-2 border-blue-800 flex items-center justify-center
+                        row.map((cell, colIndex) => {
+                            const isWinningCell = winningCells.some(
+                                cell => cell.row === rowIndex && cell.col === colIndex
+                            )
+
+                            return (
+                                <div
+                                    key={`cell-${rowIndex}-${colIndex}`}
+                                    className={`rounded-full border-2 flex items-center justify-center
                                     ${cell === 'red' ? 'bg-red-500' :
-                                        cell === 'yellow' ? 'bg-yellow-400' : 'bg-white'}`}
-                                style={{
-                                    width: '100%',
-                                    height: '0',
-                                    paddingBottom: '100%',
-                                    cursor: 'pointer'
-                                }}
-                                onClick={() => makeMove(colIndex)}
-                            />
-                        ))
+                                            cell === 'yellow' ? 'bg-yellow-400' : 'bg-white'}
+                                    ${isWinningCell ? 'border-white border-4' : 'border-blue-800'}`}
+                                    style={{
+                                        width: '100%',
+                                        height: '0',
+                                        paddingBottom: '100%',
+                                        cursor: 'pointer'
+                                    }}
+                                    onClick={() => makeMove(colIndex)}
+                                />
+                            )
+                        })
                     ))}
                 </div>
             </div>
