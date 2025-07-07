@@ -30,6 +30,52 @@ const COLORS = [
     'bg-red-500'     //Z//
 ]
 
+const TetrisControlButton = ({
+    children,
+    onClick,
+    ariaLabel,
+    className,
+    isActive = true
+}) => {
+    const buttonRef = useRef(null)
+
+    useEffect(() => {
+        const button = buttonRef.current
+        if (!button) return
+
+        const handleTouchStart = (e) => {
+            if (isActive) {
+                e.preventDefault()
+                onClick()
+            }
+        }
+
+        const handleContextMenu = (e) => {
+            e.preventDefault()
+        }
+
+        button.addEventListener('touchstart', handleTouchStart, { passive: false })
+        button.addEventListener('contextmenu', handleContextMenu)
+
+        return () => {
+            button.removeEventListener('touchstart', handleTouchStart)
+            button.removeEventListener('contextmenu', handleContextMenu)
+        }
+    }, [onClick, isActive])
+
+    return (
+        <button
+            ref={buttonRef}
+            className={`${className} touch-none select-none ${!isActive ? 'opacity-50' : 'active:opacity-80'}`}
+            aria-label={ariaLabel}
+            onClick={isActive ? onClick : undefined}
+            onMouseDown={(e) => isActive && e.preventDefault()}
+        >
+            {children}
+        </button>
+    )
+}
+
 const TetrisGame = () => {
     const location = useLocation()
     const gameId = parseInt(location.pathname.split('/')[2])
@@ -303,6 +349,16 @@ const TetrisGame = () => {
         const handleKeyDown = (e) => {
             if (gameOver || showInstructions) return
 
+            const gameKeys = [
+                'arrowleft', 'a', 'arrowright', 'd',
+                'arrowdown', 's', 'arrowup', 'w',
+                ' ', 'p'
+            ]
+
+            if (gameKeys.includes(e.key.toLowerCase())) {
+                e.preventDefault()
+            }
+
             switch (e.key.toLowerCase()) {
                 case 'arrowleft':
                 case 'a':
@@ -321,7 +377,6 @@ const TetrisGame = () => {
                     rotatePiece()
                     break
                 case ' ':
-                    e.preventDefault()
                     hardDrop()
                     break
                 case 'p':
@@ -368,8 +423,8 @@ const TetrisGame = () => {
             for (let row = 0; row < currentPiece.shape.length; row++) {
                 for (let col = 0; col < currentPiece.shape[row].length; col++) {
                     if (currentPiece.shape[row][col] !== 0) {
-                        const y = position.y + row;
-                        const x = position.x + col;
+                        const y = position.y + row
+                        const x = position.x + col
                         if (y >= 0 && y < ROWS && x >= 0 && x < COLS) {
                             displayBoard[y][x] = currentPiece.color
                         }
@@ -378,16 +433,24 @@ const TetrisGame = () => {
             }
         }
 
-        return displayBoard.map((row, rowIndex) => (
-            <div key={rowIndex} className="flex">
-                {row.map((cell, colIndex) => (
-                    <div
-                        key={`${rowIndex}-${colIndex}`}
-                        className={`${isMobile ? 'w-[25px] h-[25px]' : 'w-[30px] h-[30px]'} border border-gray-800 ${cell || 'bg-black'}`}
-                    />
+        return (
+            <div
+                className="absolute inset-0 grid"
+                style={{
+                    gridTemplateRows: `repeat(${ROWS}, 1fr)`,
+                    gridTemplateColumns: `repeat(${COLS}, 1fr)`
+                }}
+            >
+                {displayBoard.map((row, rowIndex) => (
+                    row.map((cell, colIndex) => (
+                        <div
+                            key={`${rowIndex}-${colIndex}`}
+                            className={`${cell || 'bg-black'} border border-gray-800`}
+                        />
+                    ))
                 ))}
             </div>
-        ))
+        )
     }
 
     const renderNextPiece = () => {
@@ -396,17 +459,24 @@ const TetrisGame = () => {
         return (
             <div className="flex flex-col items-center justify-center p-2">
                 <h3 className="text-retro-blue font-retro text-lg mb-2 text-center">Next</h3>
-                <div className="bg-black p-2 rounded">
-                    {nextPiece.shape.map((row, rowIndex) => (
-                        <div key={rowIndex} className="flex justify-center">
-                            {row.map((cell, colIndex) => (
+                <div className="bg-black p-2 rounded w-full">
+                    <div
+                        className="grid mx-auto"
+                        style={{
+                            gridTemplateRows: `repeat(${nextPiece.height}, 20px)`,
+                            gridTemplateColumns: `repeat(${nextPiece.width}, 20px)`,
+                            width: `${nextPiece.width * 20}px`
+                        }}
+                    >
+                        {nextPiece.shape.map((row, rowIndex) => (
+                            row.map((cell, colIndex) => (
                                 <div
                                     key={`next-${rowIndex}-${colIndex}`}
-                                    className={`w-[20px] h-[20px] border border-gray-800 ${cell ? nextPiece.color : 'bg-transparent'}`}
+                                    className={`${cell ? nextPiece.color : 'bg-transparent'} border border-gray-800`}
                                 />
-                            ))}
-                        </div>
-                    ))}
+                            ))
+                        ))}
+                    </div>
                 </div>
             </div>
         )
@@ -419,7 +489,6 @@ const TetrisGame = () => {
 
     return (
         <div className="fixed inset-0 bg-retro-dark flex flex-col overflow-hidden">
-            {/* Header - responsive */}
             <div className={`bg-retro-purple ${isMobile ? 'p-2' : 'p-4'} flex ${isMobile ? 'flex-col' : 'justify-between items-center'}`}>
                 <div className={`font-retro text-white ${isMobile ? 'text-sm text-center mb-1' : 'text-xl'}`}>
                     Score: <span className="text-retro-yellow">{score}</span> |
@@ -446,13 +515,18 @@ const TetrisGame = () => {
 
             <div className={`flex-1 flex ${isMobile ? 'flex-col' : 'flex-row'} items-center justify-center p-2 gap-4 overflow-hidden`}>
                 <div
-                    className="relative bg-black border-4 border-retro-green"
+                    className="relative bg-black border-4 border-retro-green touch-none"
                     style={{
                         width: `${COLS * (isMobile ? 25 : 30) + 8}px`,
                         height: `${ROWS * (isMobile ? 25 : 30) + 8}px`,
                         minWidth: `${COLS * (isMobile ? 25 : 30) + 8}px`,
-                        maxWidth: '100%'
+                        minHeight: `${ROWS * (isMobile ? 25 : 30) + 8}px`,
+                        maxWidth: '100%',
+                        boxSizing: 'content-box'
                     }}
+                    onContextMenu={(e) => e.preventDefault()}
+                    onTouchStart={(e) => e.preventDefault()}
+                    onMouseDown={(e) => e.preventDefault()}
                 >
                     {renderBoard()}
 
@@ -477,59 +551,68 @@ const TetrisGame = () => {
                 </div>
 
                 <div className={`flex ${isMobile ? 'flex-row w-full justify-between mt-2' : 'flex-col'} gap-4`}>
-                    <div className={`bg-retro-dark border-2 border-retro-blue rounded-lg ${isMobile ? 'w-[48%]' : 'w-full'}`}>
+                    <div className={`bg-retro-dark border-2 border-retro-blue rounded-lg ${isMobile ? 'w-[48%]' : 'w-full min-w-[120px]'
+                        }`}>
                         {renderNextPiece()}
                     </div>
 
                     {isMobile && (
                         <div className="w-full bg-retro-dark p-2 grid grid-cols-3 gap-1 touch-none">
                             <div></div>
-                            <button
+                            <TetrisControlButton
                                 onClick={rotatePiece}
-                                className="bg-retro-purple text-white p-2 rounded-md text-lg active:bg-retro-purple-dark touch-pan-y"
-                                aria-label="Rotate piece"
+                                ariaLabel="Rotate piece"
+                                className="bg-retro-purple text-white p-2 rounded-md text-lg"
+                                isActive={!gameOver && !isPaused && !showInstructions}
                             >
                                 ↻
-                            </button>
+                            </TetrisControlButton>
                             <div></div>
 
-                            <button
+                            <TetrisControlButton
                                 onClick={() => movePiece('left')}
-                                className="bg-retro-purple text-white p-2 rounded-md text-lg active:bg-retro-purple-dark touch-pan-y"
-                                aria-label="Move left"
+                                ariaLabel="Move left"
+                                className="bg-retro-purple text-white p-2 rounded-md text-lg"
+                                isActive={!gameOver && !isPaused && !showInstructions}
                             >
                                 ←
-                            </button>
+                            </TetrisControlButton>
+
                             <button
                                 onClick={() => setIsPaused(prev => !prev)}
-                                className="bg-retro-blue text-white p-2 rounded-md text-lg active:bg-retro-blue-dark touch-pan-y"
+                                className="bg-retro-blue text-white p-2 rounded-md text-lg active:bg-retro-blue-dark"
                                 aria-label={isPaused ? 'Resume' : 'Pause'}
+                                onContextMenu={(e) => e.preventDefault()}
                             >
                                 {isPaused ? '▶' : '⏸'}
                             </button>
-                            <button
+
+                            <TetrisControlButton
                                 onClick={() => movePiece('right')}
-                                className="bg-retro-purple text-white p-2 rounded-md text-lg active:bg-retro-purple-dark touch-pan-y"
-                                aria-label="Move right"
+                                ariaLabel="Move right"
+                                className="bg-retro-purple text-white p-2 rounded-md text-lg"
+                                isActive={!gameOver && !isPaused && !showInstructions}
                             >
                                 →
-                            </button>
+                            </TetrisControlButton>
 
                             <div></div>
-                            <button
+                            <TetrisControlButton
                                 onClick={() => movePiece('down')}
-                                className="bg-retro-purple text-white p-2 rounded-md text-lg active:bg-retro-purple-dark touch-pan-y"
-                                aria-label="Move down"
+                                ariaLabel="Move down"
+                                className="bg-retro-purple text-white p-2 rounded-md text-lg"
+                                isActive={!gameOver && !isPaused && !showInstructions}
                             >
                                 ↓
-                            </button>
-                            <button
+                            </TetrisControlButton>
+                            <TetrisControlButton
                                 onClick={hardDrop}
-                                className="bg-retro-yellow text-retro-dark p-2 rounded-md text-lg active:bg-retro-orange touch-pan-y"
-                                aria-label="Hard drop"
+                                ariaLabel="Hard drop"
+                                className="bg-retro-yellow text-retro-dark p-2 rounded-md text-lg"
+                                isActive={!gameOver && !isPaused && !showInstructions}
                             >
                                 ⬇
-                            </button>
+                            </TetrisControlButton>
                         </div>
                     )}
                 </div>

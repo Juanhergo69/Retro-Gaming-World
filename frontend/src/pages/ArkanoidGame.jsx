@@ -28,6 +28,55 @@ const getGridDimensions = () => {
     }
 }
 
+const TouchControlButton = ({
+    children,
+    onPress,
+    onRelease,
+    ariaLabel,
+    className,
+}) => {
+    const buttonRef = useRef(null)
+
+    useEffect(() => {
+        const button = buttonRef.current
+        if (!button) return
+
+        const handlePress = (e) => {
+            e.preventDefault()
+            onPress()
+        }
+
+        const handleRelease = (e) => {
+            e.preventDefault()
+            onRelease()
+        }
+
+        button.addEventListener('touchstart', handlePress, { passive: false })
+        button.addEventListener('touchend', handleRelease, { passive: false })
+        button.addEventListener('mousedown', handlePress)
+        button.addEventListener('mouseup', handleRelease)
+        button.addEventListener('contextmenu', (e) => e.preventDefault())
+
+        return () => {
+            button.removeEventListener('touchstart', handlePress)
+            button.removeEventListener('touchend', handleRelease)
+            button.removeEventListener('mousedown', handlePress)
+            button.removeEventListener('mouseup', handleRelease)
+            button.removeEventListener('contextmenu', (e) => e.preventDefault())
+        }
+    }, [onPress, onRelease])
+
+    return (
+        <button
+            ref={buttonRef}
+            className={`${className} touch-none select-none`}
+            aria-label={ariaLabel}
+        >
+            {children}
+        </button>
+    )
+}
+
 const INITIAL_SPEED = 30
 const BALL_SPEED = 0.3
 
@@ -521,7 +570,6 @@ const ArkanoidGame = () => {
                         maxHeight: '100%'
                     }}
                 >
-                    {/* Bricks */}
                     {bricks.map((brick, index) => (
                         <div
                             key={`brick-${index}`}
@@ -535,7 +583,6 @@ const ArkanoidGame = () => {
                         />
                     ))}
 
-                    {/* Paddle */}
                     <div
                         className="absolute bg-white rounded"
                         style={{
@@ -546,7 +593,6 @@ const ArkanoidGame = () => {
                         }}
                     />
 
-                    {/* Ball */}
                     <div
                         className="absolute bg-white rounded-full"
                         style={{
@@ -630,39 +676,36 @@ const ArkanoidGame = () => {
                 </div>
             </div>
 
-            {/* Mobile controls - always visible on mobile */}
             <div className="md:hidden bg-retro-dark p-2 grid grid-cols-3 gap-2">
-                <div className="col-span-3 flex justify-center mb-1">
-                    <span className="text-white text-xs">Swipe or use buttons</span>
-                </div>
+                <div className="col-span-3 flex justify-center mb-1"></div>
 
-                <button
-                    onTouchStart={() => setPaddle(prev => ({ ...prev, direction: 'LEFT' }))}
-                    onTouchEnd={() => setPaddle(prev => ({ ...prev, direction: 'NONE' }))}
-                    onMouseDown={() => setPaddle(prev => ({ ...prev, direction: 'LEFT' }))}
-                    onMouseUp={() => setPaddle(prev => ({ ...prev, direction: 'NONE' }))}
+                <TouchControlButton
+                    onPress={() => setPaddle(prev => ({ ...prev, direction: 'LEFT' }))}
+                    onRelease={() => setPaddle(prev => ({ ...prev, direction: 'NONE' }))}
+                    ariaLabel="Move paddle left"
                     className="bg-retro-purple text-white p-3 rounded-lg active:bg-retro-purple-dark"
                 >
                     ←
-                </button>
+                </TouchControlButton>
+
                 <button
                     onClick={() => setIsPaused(prev => !prev)}
                     className="bg-retro-blue text-white p-3 rounded-lg active:bg-retro-blue-dark"
+                    onContextMenu={(e) => e.preventDefault()}
                 >
                     {isPaused ? '▶' : '⏸'}
                 </button>
-                <button
-                    onTouchStart={() => setPaddle(prev => ({ ...prev, direction: 'RIGHT' }))}
-                    onTouchEnd={() => setPaddle(prev => ({ ...prev, direction: 'NONE' }))}
-                    onMouseDown={() => setPaddle(prev => ({ ...prev, direction: 'RIGHT' }))}
-                    onMouseUp={() => setPaddle(prev => ({ ...prev, direction: 'NONE' }))}
+
+                <TouchControlButton
+                    onPress={() => setPaddle(prev => ({ ...prev, direction: 'RIGHT' }))}
+                    onRelease={() => setPaddle(prev => ({ ...prev, direction: 'NONE' }))}
+                    ariaLabel="Move paddle right"
                     className="bg-retro-purple text-white p-3 rounded-lg active:bg-retro-purple-dark"
                 >
                     →
-                </button>
+                </TouchControlButton>
             </div>
 
-            {/* Touch controls for larger mobile devices */}
             <div
                 className="fixed inset-0 md:hidden z-40 pointer-events-none"
                 onTouchMove={(e) => {

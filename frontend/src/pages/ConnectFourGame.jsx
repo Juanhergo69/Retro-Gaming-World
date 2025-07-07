@@ -28,6 +28,40 @@ const getGameDimensions = () => {
     }
 }
 
+const TouchButton = ({ onClick, children, className, style }) => {
+    const buttonRef = useRef(null);
+
+    useEffect(() => {
+        const button = buttonRef.current
+        if (!button) return
+
+        const handleTouchStart = (e) => {
+            e.preventDefault()
+            onClick()
+        }
+
+        button.addEventListener('touchstart', handleTouchStart, { passive: false });
+        button.addEventListener('contextmenu', (e) => e.preventDefault())
+
+        return () => {
+            button.removeEventListener('touchstart', handleTouchStart)
+            button.removeEventListener('contextmenu', (e) => e.preventDefault())
+        }
+    }, [onClick])
+
+    return (
+        <button
+            ref={buttonRef}
+            className={`${className} touch-none select-none`}
+            style={style}
+            onClick={onClick}
+            onMouseDown={(e) => e.preventDefault()}
+        >
+            {children}
+        </button>
+    )
+}
+
 const WINNING_LENGTH = 4
 
 const ConnectFourGame = () => {
@@ -436,24 +470,22 @@ const ConnectFourGame = () => {
     const renderBoard = () => {
         return (
             <div className="relative bg-blue-700 p-1 sm:p-2 rounded-lg">
-                {/* Column indicators */}
                 <div className="flex mb-1 sm:mb-2">
                     {Array(dimensions.cols).fill().map((_, col) => (
-                        <div
+                        <TouchButton
                             key={`indicator-${col}`}
-                            className="flex-1 text-center text-white font-bold cursor-pointer hover:bg-blue-600 rounded"
                             onClick={() => makeMove(col)}
+                            className="flex-1 text-center text-white font-bold hover:bg-blue-600 rounded"
                             style={{
                                 fontSize: `${Math.min(dimensions.cellSize * 0.3, 20)}px`,
                                 padding: '3px 0'
                             }}
                         >
                             {col + 1}
-                        </div>
+                        </TouchButton>
                     ))}
                 </div>
 
-                {/* Game board */}
                 <div
                     className="grid gap-1"
                     style={{
@@ -471,16 +503,23 @@ const ConnectFourGame = () => {
                                 <div
                                     key={`cell-${rowIndex}-${colIndex}`}
                                     className={`rounded-full border-2 flex items-center justify-center
-                                    ${cell === 'red' ? 'bg-red-500' :
+    ${cell === 'red' ? 'bg-red-500' :
                                             cell === 'yellow' ? 'bg-yellow-400' : 'bg-white'}
-                                    ${isWinningCell ? 'border-white border-4' : 'border-blue-800'}`}
+    ${isWinningCell ? 'border-white border-4' : 'border-blue-800'}`}
                                     style={{
                                         width: '100%',
                                         height: '0',
                                         paddingBottom: '100%',
-                                        cursor: 'pointer'
+                                        cursor: 'pointer',
+                                        touchAction: 'none'
                                     }}
                                     onClick={() => makeMove(colIndex)}
+                                    onContextMenu={(e) => e.preventDefault()}
+                                    onTouchStart={(e) => {
+                                        e.preventDefault();
+                                        makeMove(colIndex);
+                                    }}
+                                    onMouseDown={(e) => e.preventDefault()}
                                 />
                             )
                         })
@@ -492,7 +531,6 @@ const ConnectFourGame = () => {
 
     return (
         <div className="fixed inset-0 bg-retro-dark flex flex-col">
-            {/* Header with game info */}
             <div className="bg-retro-purple p-2 sm:p-4 flex flex-col sm:flex-row justify-between items-center">
                 <div className="font-retro text-white text-sm sm:text-xl mb-2 sm:mb-0 text-center sm:text-left">
                     Score: <span className="text-retro-yellow">{score}</span> |
@@ -520,7 +558,6 @@ const ConnectFourGame = () => {
                 </div>
             </div>
 
-            {/* Main game area */}
             <div className="flex-1 flex flex-col items-center justify-center p-1 sm:p-2 overflow-auto">
                 <div
                     className="relative bg-black border-4 border-retro-green rounded-lg"
@@ -529,10 +566,11 @@ const ConnectFourGame = () => {
                         maxWidth: '95vw',
                         padding: '8px'
                     }}
+                    onContextMenu={(e) => e.preventDefault()}
+                    onMouseDown={(e) => e.preventDefault()}
                 >
                     {renderBoard()}
 
-                    {/* Game over overlay */}
                     {gameOver && winner !== 'red' && (
                         <div className="absolute inset-0 bg-black bg-opacity-70 flex flex-col items-center justify-center">
                             <h2 className="text-retro-pink font-retro text-2xl sm:text-4xl mb-4 sm:mb-6">
@@ -548,14 +586,12 @@ const ConnectFourGame = () => {
                         </div>
                     )}
 
-                    {/* Paused overlay */}
                     {isPaused && !gameOver && !showInstructions && (
                         <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
                             <h2 className="text-retro-blue font-retro text-2xl sm:text-4xl">PAUSED</h2>
                         </div>
                     )}
 
-                    {/* Instructions overlay */}
                     {showInstructions && (
                         <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-2 sm:p-4">
                             <div className="bg-retro-dark border-4 border-retro-yellow rounded-lg p-4 sm:p-6 max-w-2xl w-full mx-2 sm:mx-4 overflow-y-auto max-h-[90vh]">
@@ -610,17 +646,16 @@ const ConnectFourGame = () => {
                 </div>
             </div>
 
-            {/* Mobile controls */}
             <div className="md:hidden bg-retro-dark p-2 grid grid-cols-7 gap-1">
                 {Array(dimensions.cols).fill().map((_, col) => (
-                    <button
+                    <TouchButton
                         key={`mobile-btn-${col}`}
                         onClick={() => makeMove(col)}
                         className="bg-retro-purple text-white p-2 rounded font-bold active:bg-retro-purple-dark"
                         style={{ fontSize: `${Math.min(dimensions.cellSize * 0.3, 18)}px` }}
                     >
                         {col + 1}
-                    </button>
+                    </TouchButton>
                 ))}
             </div>
         </div>

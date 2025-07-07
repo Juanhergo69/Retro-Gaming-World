@@ -30,6 +30,45 @@ const getGameDimensions = () => {
     }
 }
 
+const TouchControlButton = ({
+    children,
+    onPress,
+    ariaLabel,
+    className,
+}) => {
+    const buttonRef = useRef(null)
+
+    useEffect(() => {
+        const button = buttonRef.current
+        if (!button) return
+
+        const handleInteraction = (e) => {
+            e.preventDefault()
+            onPress()
+        }
+
+        button.addEventListener('touchstart', handleInteraction, { passive: false })
+        button.addEventListener('mousedown', handleInteraction)
+        button.addEventListener('contextmenu', (e) => e.preventDefault())
+
+        return () => {
+            button.removeEventListener('touchstart', handleInteraction)
+            button.removeEventListener('mousedown', handleInteraction)
+            button.removeEventListener('contextmenu', (e) => e.preventDefault())
+        }
+    }, [onPress])
+
+    return (
+        <button
+            ref={buttonRef}
+            className={`${className} touch-none select-none`}
+            aria-label={ariaLabel}
+        >
+            {children}
+        </button>
+    )
+}
+
 const INITIAL_SPEED = 150
 
 const SnakeGame = () => {
@@ -369,45 +408,48 @@ const SnakeGame = () => {
 
             <div className="md:hidden bg-retro-dark p-3 grid grid-cols-3 gap-2 touch-none">
                 <div></div>
-                <button
-                    onClick={() => direction !== 'DOWN' && setDirection('UP')}
-                    className="bg-retro-purple text-white p-3 rounded-lg text-xl active:bg-retro-purple-dark touch-pan-y"
-                    aria-label="Move up"
+                <TouchControlButton
+                    onPress={() => direction !== 'DOWN' && setDirection('UP')}
+                    ariaLabel="Move up"
+                    className="bg-retro-purple text-white p-3 rounded-lg text-xl active:bg-retro-purple-dark"
                 >
                     ↑
-                </button>
+                </TouchControlButton>
                 <div></div>
 
-                <button
-                    onClick={() => direction !== 'RIGHT' && setDirection('LEFT')}
-                    className="bg-retro-purple text-white p-3 rounded-lg text-xl active:bg-retro-purple-dark touch-pan-y"
-                    aria-label="Move left"
+                <TouchControlButton
+                    onPress={() => direction !== 'RIGHT' && setDirection('LEFT')}
+                    ariaLabel="Move left"
+                    className="bg-retro-purple text-white p-3 rounded-lg text-xl active:bg-retro-purple-dark"
                 >
                     ←
-                </button>
+                </TouchControlButton>
+
                 <button
                     onClick={() => setIsPaused(prev => !prev)}
                     className="bg-retro-blue text-white p-3 rounded-lg text-xl active:bg-retro-blue-dark touch-pan-y"
                     aria-label="Pause game"
+                    onContextMenu={(e) => e.preventDefault()}
                 >
                     {isPaused ? '▶' : '⏸'}
                 </button>
-                <button
-                    onClick={() => direction !== 'LEFT' && setDirection('RIGHT')}
-                    className="bg-retro-purple text-white p-3 rounded-lg text-xl active:bg-retro-purple-dark touch-pan-y"
-                    aria-label="Move right"
+
+                <TouchControlButton
+                    onPress={() => direction !== 'LEFT' && setDirection('RIGHT')}
+                    ariaLabel="Move right"
+                    className="bg-retro-purple text-white p-3 rounded-lg text-xl active:bg-retro-purple-dark"
                 >
                     →
-                </button>
+                </TouchControlButton>
 
                 <div></div>
-                <button
-                    onClick={() => direction !== 'UP' && setDirection('DOWN')}
-                    className="bg-retro-purple text-white p-3 rounded-lg text-xl active:bg-retro-purple-dark touch-pan-y"
-                    aria-label="Move down"
+                <TouchControlButton
+                    onPress={() => direction !== 'UP' && setDirection('DOWN')}
+                    ariaLabel="Move down"
+                    className="bg-retro-purple text-white p-3 rounded-lg text-xl active:bg-retro-purple-dark"
                 >
                     ↓
-                </button>
+                </TouchControlButton>
                 <div></div>
             </div>
         </div>

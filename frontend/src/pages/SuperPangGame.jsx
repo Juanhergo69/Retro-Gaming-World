@@ -3,16 +3,73 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { submitScore, getHighScore } from '../logic/scoreService'
 
+const getCellSize = () => {
+    const isMobile = window.innerWidth <= 768
+    return isMobile ? Math.floor(window.innerWidth * 0.9 / 21) : 25
+}
+
+const TouchControlButton = ({
+    children,
+    onPress,
+    onRelease,
+    ariaLabel,
+    className,
+    disabled = false
+}) => {
+    const buttonRef = useRef(null)
+
+    useEffect(() => {
+        const button = buttonRef.current
+        if (!button) return
+
+        const handlePress = (e) => {
+            e.preventDefault()
+            if (!disabled) onPress()
+        }
+
+        const handleRelease = (e) => {
+            e.preventDefault()
+            if (!disabled && onRelease) onRelease()
+        }
+
+        button.addEventListener('touchstart', handlePress, { passive: false })
+        button.addEventListener('touchend', handleRelease, { passive: false })
+        button.addEventListener('mousedown', handlePress)
+        button.addEventListener('mouseup', handleRelease)
+        button.addEventListener('mouseleave', handleRelease)
+        button.addEventListener('contextmenu', (e) => e.preventDefault())
+
+        return () => {
+            button.removeEventListener('touchstart', handlePress)
+            button.removeEventListener('touchend', handleRelease)
+            button.removeEventListener('mousedown', handlePress)
+            button.removeEventListener('mouseup', handleRelease)
+            button.removeEventListener('mouseleave', handleRelease)
+            button.removeEventListener('contextmenu', (e) => e.preventDefault())
+        }
+    }, [onPress, onRelease, disabled])
+
+    return (
+        <button
+            ref={buttonRef}
+            className={`${className} touch-none select-none ${disabled ? 'opacity-50' : ''}`}
+            aria-label={ariaLabel}
+            disabled={disabled}
+        >
+            {children}
+        </button>
+    )
+}
+
 const GRID_WIDTH = 21
 const GRID_HEIGHT = 21
-const CELL_SIZE = 25
 const INITIAL_SPEED = 100
 const INITIAL_BUBBLE_SPEED = {
     x: 0.05,
     y: 0.05
 }
 const PLAYER_SPEED = 8
-const PLAYER_WIDTH = 40
+const PLAYER_WIDTH_RATIO = 1.6
 const BULLET_SPEED = 10
 const BUBBLE_SPAWN_RATE = 2000
 const BUBBLE_SPAWN_ROW = 1
@@ -37,8 +94,10 @@ const SuperPangGame = () => {
     const gameId = parseInt(location.pathname.split('/')[2])
     const navigate = useNavigate()
     const { user } = useAuth()
+    const [cellSize, setCellSize] = useState(getCellSize())
+    const [playerWidth, setPlayerWidth] = useState(getCellSize() * PLAYER_WIDTH_RATIO)
     const [player, setPlayer] = useState({
-        x: GRID_WIDTH * CELL_SIZE / 2 - PLAYER_WIDTH / 2,
+        x: GRID_WIDTH * getCellSize() / 2 - (getCellSize() * PLAYER_WIDTH_RATIO) / 2,
         direction: 'RIGHT',
         moving: false
     })
@@ -50,18 +109,39 @@ const SuperPangGame = () => {
     const [highScore, setHighScore] = useState(0)
     const [level, setLevel] = useState(1)
     const [showInstructions, setShowInstructions] = useState(true)
+    const [isShooting, setIsShooting] = useState(false)
     const bubbleSpawnRef = useRef()
     const speedRef = useRef(INITIAL_SPEED)
+    const gameContainerRef = useRef(null)
+
+    useEffect(() => {
+        const handleResize = () => {
+            const newCellSize = getCellSize()
+            setCellSize(newCellSize)
+            setPlayerWidth(newCellSize * PLAYER_WIDTH_RATIO)
+
+            setPlayer(prev => ({
+                ...prev,
+                x: Math.min(
+                    Math.max(0, prev.x),
+                    GRID_WIDTH * newCellSize - (newCellSize * PLAYER_WIDTH_RATIO)
+                )
+            }))
+        }
+
+        window.addEventListener('resize', handleResize)
+        return () => window.removeEventListener('resize', handleResize)
+    }, [])
 
     const initializeBoard = useCallback(() => {
         setBubbles([])
         setBullets([])
         setPlayer({
-            x: GRID_WIDTH * CELL_SIZE / 2 - PLAYER_WIDTH / 2,
+            x: GRID_WIDTH * cellSize / 2 - playerWidth / 2,
             direction: 'RIGHT',
             moving: false
         })
-    }, [])
+    }, [cellSize, playerWidth])
 
     const generateBubbles = useCallback(() => {
         const newBubbles = []
@@ -129,8 +209,8 @@ const SuperPangGame = () => {
 
             if (newX < 0) {
                 newX = 0
-            } else if (newX > GRID_WIDTH * CELL_SIZE - PLAYER_WIDTH) {
-                newX = GRID_WIDTH * CELL_SIZE - PLAYER_WIDTH
+            } else if (newX > GRID_WIDTH * cellSize - playerWidth) {
+                newX = GRID_WIDTH * cellSize - playerWidth
             }
 
             return {
@@ -138,7 +218,7 @@ const SuperPangGame = () => {
                 x: newX
             }
         })
-    }, [gameOver, isPaused, showInstructions])
+    }, [gameOver, isPaused, showInstructions, cellSize, playerWidth])
 
     const moveBullets = useCallback(() => {
         if (gameOver || isPaused || showInstructions) return
@@ -237,11 +317,11 @@ const SuperPangGame = () => {
 
                 for (let j = bubbles.length - 1; j >= 0; j--) {
                     const bubble = bubbles[j]
-                    const bubbleSize = CELL_SIZE * bubble.size * 0.8
+                    const bubbleSize = cellSize * bubble.size * 0.8
 
-                    const bubbleLeft = bubble.x * CELL_SIZE - (bubbleSize / 2)
+                    const bubbleLeft = bubble.x * cellSize - (bubbleSize / 2)
                     const bubbleRight = bubbleLeft + bubbleSize
-                    const bubbleTop = bubble.y * CELL_SIZE - (bubbleSize / 2)
+                    const bubbleTop = bubble.y * cellSize - (bubbleSize / 2)
                     const bubbleBottom = bubbleTop + bubbleSize
 
                     const bulletLeft = bullet.x
@@ -296,15 +376,15 @@ const SuperPangGame = () => {
         })
 
         const playerHit = bubbles.some(bubble => {
-            const bubbleSize = CELL_SIZE * bubble.size * 0.8
-            const bubbleLeft = bubble.x * CELL_SIZE - (bubbleSize / 2)
+            const bubbleSize = cellSize * bubble.size * 0.8
+            const bubbleLeft = bubble.x * cellSize - (bubbleSize / 2)
             const bubbleRight = bubbleLeft + bubbleSize
-            const bubbleTop = bubble.y * CELL_SIZE - (bubbleSize / 2)
+            const bubbleTop = bubble.y * cellSize - (bubbleSize / 2)
             const bubbleBottom = bubbleTop + bubbleSize
 
             const playerLeft = player.x + 5
-            const playerRight = player.x + PLAYER_WIDTH - 5
-            const playerTop = GRID_HEIGHT * CELL_SIZE - 25
+            const playerRight = player.x + playerWidth - 5
+            const playerTop = GRID_HEIGHT * cellSize - 25
             const playerBottom = playerTop + 20
 
             return (
@@ -322,20 +402,23 @@ const SuperPangGame = () => {
         if (bubbles.length === 0) {
             advanceLevel()
         }
-    }, [gameOver, isPaused, showInstructions, bubbles, bullets, highScore, player, handleGameOver, advanceLevel])
+    }, [gameOver, isPaused, showInstructions, bubbles, bullets, highScore, player, cellSize, playerWidth, handleGameOver, advanceLevel])
 
     const shootBullet = useCallback(() => {
-        if (gameOver || isPaused || showInstructions) return
+        if (gameOver || isPaused || showInstructions || isShooting) return;
 
+        setIsShooting(true);
         setBullets(prev => [
             ...prev,
             {
-                x: player.x + PLAYER_WIDTH / 2 - 2.5,
-                y: GRID_HEIGHT * CELL_SIZE - 30,
+                x: player.x + playerWidth / 2 - 2.5,
+                y: GRID_HEIGHT * cellSize - 30,
                 id: Date.now()
             }
         ])
-    }, [gameOver, isPaused, showInstructions, player.x])
+
+        setTimeout(() => setIsShooting(false), 200)
+    }, [gameOver, isPaused, showInstructions, player.x, playerWidth, cellSize, isShooting])
 
     useEffect(() => {
         const handleKeyDown = (e) => {
@@ -434,54 +517,68 @@ const SuperPangGame = () => {
         setShowInstructions(false)
     }
 
+    const handleTouchStart = (direction) => {
+        if (gameOver || isPaused || showInstructions) return
+        setPlayer({
+            direction,
+            moving: true,
+            x: player.x
+        })
+    }
+
+    const handleTouchEnd = () => {
+        setPlayer(prev => ({ ...prev, moving: false }))
+    }
+
     return (
         <div className="fixed inset-0 bg-retro-dark flex flex-col">
-            <div className="bg-retro-purple p-4 flex justify-between items-center">
-                <div className="font-retro text-white text-xl">
+            <div className="bg-retro-purple p-2 sm:p-4 flex flex-col sm:flex-row justify-between items-center">
+                <div className="font-retro text-white text-sm sm:text-xl mb-2 sm:mb-0 text-center sm:text-left">
                     Score: <span className="text-retro-yellow">{score}</span> |
-                    High Score: <span className="text-retro-green">{highScore}</span> |
+                    High: <span className="text-retro-green">{highScore}</span> |
                     Level: <span className="text-retro-blue">{level}</span>
                 </div>
 
-                <div className="flex space-x-3">
+                <div className="flex space-x-2 sm:space-x-3">
                     <button
                         onClick={() => setIsPaused(prev => !prev)}
-                        className="bg-retro-blue hover:bg-retro-blue-dark text-white font-retro px-4 py-2 rounded"
+                        className="bg-retro-blue hover:bg-retro-blue-dark text-white font-retro px-3 py-1 sm:px-4 sm:py-2 rounded text-sm sm:text-base"
                     >
                         {isPaused ? 'Resume' : 'Pause'}
                     </button>
 
                     <button
                         onClick={() => navigate('/home')}
-                        className="bg-retro-pink hover:bg-retro-pink-dark text-white font-retro px-4 py-2 rounded"
+                        className="bg-retro-pink hover:bg-retro-pink-dark text-white font-retro px-3 py-1 sm:px-4 sm:py-2 rounded text-sm sm:text-base"
                     >
                         Exit
                     </button>
                 </div>
             </div>
 
-            <div className="flex-1 flex items-center justify-center">
+            <div className="flex-1 flex items-center justify-center p-2">
                 <div
+                    ref={gameContainerRef}
                     className="relative bg-black border-4 border-retro-green"
                     style={{
-                        width: `${GRID_WIDTH * CELL_SIZE}px`,
-                        height: `${GRID_HEIGHT * CELL_SIZE}px`,
-                        boxSizing: 'content-box'
+                        width: `${GRID_WIDTH * cellSize}px`,
+                        height: `${GRID_HEIGHT * cellSize}px`,
+                        boxSizing: 'content-box',
+                        maxWidth: '100%',
+                        maxHeight: 'calc(100vh - 150px)'
                     }}
                 >
-                    {/* Player */}
                     <div
                         className="absolute bg-retro-yellow"
                         style={{
-                            width: `${PLAYER_WIDTH - 10}px`,
+                            width: `${playerWidth}px`,
                             height: '20px',
-                            left: `${player.x + 5}px`,
-                            top: `${GRID_HEIGHT * CELL_SIZE - 25}px`,
+                            left: `${player.x}px`,
+                            top: `${GRID_HEIGHT * cellSize - 25}px`,
                             clipPath: 'polygon(0% 0%, 100% 0%, 80% 100%, 20% 100%)'
                         }}
                     />
 
-                    {/* Bullets */}
                     {bullets.map((bullet) => (
                         <div
                             key={`bullet-${bullet.id}`}
@@ -495,16 +592,15 @@ const SuperPangGame = () => {
                         />
                     ))}
 
-                    {/* Bubbles */}
                     {bubbles.map((bubble) => (
                         <div
                             key={`bubble-${bubble.id}`}
                             className={`absolute rounded-full ${bubble.color}`}
                             style={{
-                                width: `${CELL_SIZE * bubble.size * 0.8}px`,
-                                height: `${CELL_SIZE * bubble.size * 0.8}px`,
-                                left: `${Math.max(0, (bubble.x - bubble.size * 0.4) * CELL_SIZE)}px`,
-                                top: `${Math.max(0, (bubble.y - bubble.size * 0.4) * CELL_SIZE)}px`,
+                                width: `${cellSize * bubble.size * 0.8}px`,
+                                height: `${cellSize * bubble.size * 0.8}px`,
+                                left: `${Math.max(0, (bubble.x - bubble.size * 0.4) * cellSize)}px`,
+                                top: `${Math.max(0, (bubble.y - bubble.size * 0.4) * cellSize)}px`,
                                 transform: 'translate(0, 0)'
                             }}
                         />
@@ -512,11 +608,11 @@ const SuperPangGame = () => {
 
                     {gameOver && (
                         <div className="absolute inset-0 bg-black bg-opacity-70 flex flex-col items-center justify-center">
-                            <h2 className="text-retro-pink font-retro text-4xl mb-6">GAME OVER</h2>
-                            <p className="text-white text-xl mb-4">Your score: {score}</p>
+                            <h2 className="text-retro-pink font-retro text-3xl md:text-4xl mb-4 md:mb-6">GAME OVER</h2>
+                            <p className="text-white text-lg md:text-xl mb-3 md:mb-4">Your score: {score}</p>
                             <button
                                 onClick={resetGame}
-                                className="bg-retro-yellow hover:bg-retro-yellow-dark text-retro-dark font-retro px-6 py-3 rounded-lg text-xl"
+                                className="bg-retro-yellow hover:bg-retro-yellow-dark text-retro-dark font-retro px-4 py-2 md:px-6 md:py-3 rounded-lg text-lg md:text-xl"
                             >
                                 Play Again
                             </button>
@@ -525,24 +621,24 @@ const SuperPangGame = () => {
 
                     {isPaused && !gameOver && !showInstructions && (
                         <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                            <h2 className="text-retro-blue font-retro text-4xl">PAUSED</h2>
+                            <h2 className="text-retro-blue font-retro text-3xl md:text-4xl">PAUSED</h2>
                         </div>
                     )}
 
                     {showInstructions && (
                         <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4">
-                            <div className="bg-retro-dark border-4 border-retro-yellow rounded-lg p-6 max-w-2xl w-full mx-4">
-                                <h2 className="text-retro-green font-retro text-4xl mb-6 text-center">HOW TO PLAY SUPERPANG</h2>
+                            <div className="bg-retro-dark border-4 border-retro-yellow rounded-lg p-4 md:p-6 max-w-2xl w-full mx-4 overflow-y-auto max-h-[90vh]">
+                                <h2 className="text-retro-green font-retro text-3xl md:text-4xl mb-4 md:mb-6 text-center">HOW TO PLAY SUPERPANG</h2>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-4 md:mb-6">
                                     <div>
-                                        <h3 className="text-retro-blue font-retro text-2xl mb-3">Objective</h3>
-                                        <p className="text-white mb-4">
+                                        <h3 className="text-retro-blue font-retro text-xl md:text-2xl mb-2 md:mb-3">Objective</h3>
+                                        <p className="text-white mb-3 md:mb-4 text-sm md:text-base">
                                             Shoot bubbles to break them into smaller pieces. Clear all bubbles before they reach the bottom.
                                             Smaller bubbles are worth more points.
                                         </p>
-                                        <h3 className="text-retro-pink font-retro text-2xl mb-3">Scoring</h3>
-                                        <ul className="text-white space-y-2">
+                                        <h3 className="text-retro-pink font-retro text-xl md:text-2xl mb-2 md:mb-3">Scoring</h3>
+                                        <ul className="text-white space-y-1 md:space-y-2 text-sm md:text-base">
                                             <li>• Large bubble: 50 points</li>
                                             <li>• Medium bubble: 100 points</li>
                                             <li>• Small bubble: 150 points</li>
@@ -550,15 +646,15 @@ const SuperPangGame = () => {
                                     </div>
 
                                     <div>
-                                        <h3 className="text-retro-yellow font-retro text-2xl mb-3">Controls</h3>
-                                        <ul className="text-white space-y-3">
+                                        <h3 className="text-retro-yellow font-retro text-xl md:text-2xl mb-2 md:mb-3">Controls</h3>
+                                        <ul className="text-white space-y-1 md:space-y-3 text-sm md:text-base">
                                             <li>• <span className="text-retro-blue">← →</span> or <span className="text-retro-blue">A/D</span>: Move left/right</li>
                                             <li>• <span className="text-retro-blue">Space</span>: Shoot</li>
                                             <li>• <span className="text-retro-blue">P</span>: Pause/Resume</li>
                                         </ul>
 
-                                        <h3 className="text-retro-pink font-retro text-2xl mt-6 mb-3">Game Rules</h3>
-                                        <ul className="text-white space-y-2">
+                                        <h3 className="text-retro-pink font-retro text-xl md:text-2xl mt-4 md:mt-6 mb-2 md:mb-3">Game Rules</h3>
+                                        <ul className="text-white space-y-1 md:space-y-2 text-sm md:text-base">
                                             <li>• Game ends if any bubble reaches the bottom</li>
                                             <li>• Complete a level by clearing all bubbles</li>
                                             <li>• Score carries over between levels</li>
@@ -570,7 +666,7 @@ const SuperPangGame = () => {
                                 <div className="text-center">
                                     <button
                                         onClick={startGame}
-                                        className="bg-retro-pink hover:bg-retro-pink-dark text-white font-retro px-8 py-3 rounded-lg text-xl"
+                                        className="bg-retro-pink hover:bg-retro-pink-dark text-white font-retro px-6 py-2 md:px-8 md:py-3 rounded-lg text-lg md:text-xl"
                                     >
                                         START GAME
                                     </button>
@@ -581,36 +677,45 @@ const SuperPangGame = () => {
                 </div>
             </div>
 
-            <div className="md:hidden bg-retro-dark p-4 grid grid-cols-3 gap-2">
-                <div></div>
-                <button
-                    onClick={() => shootBullet()}
-                    className="bg-retro-purple text-white p-4 rounded"
-                >
-                    Shoot
-                </button>
-                <div></div>
+            <div className="md:hidden bg-retro-dark/90 p-3 fixed bottom-0 left-0 right-0 select-none">
+                <div className="flex justify-center mb-2">
+                    <TouchControlButton
+                        onPress={shootBullet}
+                        ariaLabel="Shoot"
+                        className="bg-retro-purple text-white px-6 py-3 rounded-lg text-lg w-full max-w-md active:bg-retro-purple-dark"
+                        disabled={isShooting}
+                    >
+                        Shoot
+                    </TouchControlButton>
+                </div>
 
-                <button
-                    onTouchStart={() => setPlayer(prev => ({ ...prev, direction: 'LEFT', moving: true }))}
-                    onTouchEnd={() => setPlayer(prev => ({ ...prev, moving: false }))}
-                    className="bg-retro-purple text-white p-4 rounded"
-                >
-                    ←
-                </button>
-                <button
-                    onClick={() => setIsPaused(prev => !prev)}
-                    className="bg-retro-blue text-white p-4 rounded"
-                >
-                    {isPaused ? '▶' : '⏸'}
-                </button>
-                <button
-                    onTouchStart={() => setPlayer(prev => ({ ...prev, direction: 'RIGHT', moving: true }))}
-                    onTouchEnd={() => setPlayer(prev => ({ ...prev, moving: false }))}
-                    className="bg-retro-purple text-white p-4 rounded"
-                >
-                    →
-                </button>
+                <div className="grid grid-cols-3 gap-3">
+                    <TouchControlButton
+                        onPress={() => handleTouchStart('LEFT')}
+                        onRelease={handleTouchEnd}
+                        ariaLabel="Move left"
+                        className="bg-retro-purple text-white py-4 rounded-lg text-2xl active:bg-retro-purple-dark"
+                    >
+                        ←
+                    </TouchControlButton>
+
+                    <button
+                        onClick={() => setIsPaused(prev => !prev)}
+                        className="bg-retro-blue text-white py-4 rounded-lg text-2xl touch-none active:bg-retro-blue-dark"
+                        onContextMenu={(e) => e.preventDefault()}
+                    >
+                        {isPaused ? '▶' : '⏸'}
+                    </button>
+
+                    <TouchControlButton
+                        onPress={() => handleTouchStart('RIGHT')}
+                        onRelease={handleTouchEnd}
+                        ariaLabel="Move right"
+                        className="bg-retro-purple text-white py-4 rounded-lg text-2xl active:bg-retro-purple-dark"
+                    >
+                        →
+                    </TouchControlButton>
+                </div>
             </div>
         </div>
     )

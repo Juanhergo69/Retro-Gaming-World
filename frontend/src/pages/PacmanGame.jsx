@@ -28,6 +28,45 @@ const getGameDimensions = () => {
     }
 }
 
+const TouchControlButton = ({
+    children,
+    onPress,
+    ariaLabel,
+    className,
+}) => {
+    const buttonRef = useRef(null)
+
+    useEffect(() => {
+        const button = buttonRef.current
+        if (!button) return
+
+        const handleInteraction = (e) => {
+            e.preventDefault()
+            onPress()
+        }
+
+        button.addEventListener('touchstart', handleInteraction, { passive: false })
+        button.addEventListener('mousedown', handleInteraction)
+        button.addEventListener('contextmenu', (e) => e.preventDefault())
+
+        return () => {
+            button.removeEventListener('touchstart', handleInteraction)
+            button.removeEventListener('mousedown', handleInteraction)
+            button.removeEventListener('contextmenu', (e) => e.preventDefault())
+        }
+    }, [onPress])
+
+    return (
+        <button
+            ref={buttonRef}
+            className={`${className} touch-none select-none`}
+            aria-label={ariaLabel}
+        >
+            {children}
+        </button>
+    )
+}
+
 const DIRECTIONS = {
     UP: { x: 0, y: -1 },
     DOWN: { x: 0, y: 1 },
@@ -1059,45 +1098,48 @@ const PacmanGame = () => {
 
             <div className="md:hidden bg-retro-dark p-3 grid grid-cols-3 gap-2 touch-none">
                 <div></div>
-                <button
-                    onTouchStart={() => setPacman(prev => ({ ...prev, nextDirection: 'UP' }))}
-                    className="bg-retro-purple text-white p-3 rounded-lg text-xl active:bg-retro-purple-dark touch-pan-y"
-                    aria-label="Move up"
+                <TouchControlButton
+                    onPress={() => setPacman(prev => ({ ...prev, nextDirection: 'UP' }))}
+                    ariaLabel="Move up"
+                    className="bg-retro-purple text-white p-3 rounded-lg text-xl active:bg-retro-purple-dark"
                 >
                     ↑
-                </button>
+                </TouchControlButton>
                 <div></div>
 
-                <button
-                    onTouchStart={() => setPacman(prev => ({ ...prev, nextDirection: 'LEFT' }))}
-                    className="bg-retro-purple text-white p-3 rounded-lg text-xl active:bg-retro-purple-dark touch-pan-y"
-                    aria-label="Move left"
+                <TouchControlButton
+                    onPress={() => setPacman(prev => ({ ...prev, nextDirection: 'LEFT' }))}
+                    ariaLabel="Move left"
+                    className="bg-retro-purple text-white p-3 rounded-lg text-xl active:bg-retro-purple-dark"
                 >
                     ←
-                </button>
+                </TouchControlButton>
+
                 <button
                     onClick={() => setIsPaused(prev => !prev)}
                     className="bg-retro-blue text-white p-3 rounded-lg text-xl active:bg-retro-blue-dark touch-pan-y"
                     aria-label="Pause game"
+                    onContextMenu={(e) => e.preventDefault()}
                 >
                     {isPaused ? '▶' : '⏸'}
                 </button>
-                <button
-                    onTouchStart={() => setPacman(prev => ({ ...prev, nextDirection: 'RIGHT' }))}
-                    className="bg-retro-purple text-white p-3 rounded-lg text-xl active:bg-retro-purple-dark touch-pan-y"
-                    aria-label="Move right"
+
+                <TouchControlButton
+                    onPress={() => setPacman(prev => ({ ...prev, nextDirection: 'RIGHT' }))}
+                    ariaLabel="Move right"
+                    className="bg-retro-purple text-white p-3 rounded-lg text-xl active:bg-retro-purple-dark"
                 >
                     →
-                </button>
+                </TouchControlButton>
 
                 <div></div>
-                <button
-                    onTouchStart={() => setPacman(prev => ({ ...prev, nextDirection: 'DOWN' }))}
-                    className="bg-retro-purple text-white p-3 rounded-lg text-xl active:bg-retro-purple-dark touch-pan-y"
-                    aria-label="Move down"
+                <TouchControlButton
+                    onPress={() => setPacman(prev => ({ ...prev, nextDirection: 'DOWN' }))}
+                    ariaLabel="Move down"
+                    className="bg-retro-purple text-white p-3 rounded-lg text-xl active:bg-retro-purple-dark"
                 >
                     ↓
-                </button>
+                </TouchControlButton>
                 <div></div>
             </div>
         </div>
