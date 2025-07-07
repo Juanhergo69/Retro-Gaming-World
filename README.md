@@ -30,7 +30,7 @@ The website will allow you to register, play the variety of games available, rat
 
 ## UI/UX Design
 
-[Aqui mi link](https://www.figma.com/design/fToTgRo8hcjUxl2uNbJs0u/Retro-Gaming-World?node-id=0-1&t=hKUJGRAyuKRCMGuu-1) 
+[Here's my figma link](https://www.figma.com/design/fToTgRo8hcjUxl2uNbJs0u/Retro-Gaming-World?node-id=0-1&t=hKUJGRAyuKRCMGuu-1) 
 
 ## Technical Description
 
@@ -113,5 +113,5 @@ const gameSchema = new mongoose.Schema({
 
 ## Project
 
-If you have deployed your app, add the link here!
+[Here's my deployed proyect link](https://retro-gaming-world.surge.sh/)
 
