@@ -810,7 +810,6 @@ const PacmanGame = () => {
 
     return (
         <div className="fixed inset-0 bg-retro-dark flex flex-col">
-            {/* Header with game info */}
             <div className="bg-retro-purple p-2 sm:p-4 flex flex-col sm:flex-row justify-between items-center">
                 <div className="font-retro text-white text-sm sm:text-xl mb-2 sm:mb-0 text-center sm:text-left">
                     Score: <span className="text-retro-yellow">{score}</span> |
@@ -835,7 +834,6 @@ const PacmanGame = () => {
                 </div>
             </div>
 
-            {/* Main game area */}
             <div className="flex-1 flex items-center justify-center p-2 overflow-auto">
                 <div
                     className="relative bg-black border-4 border-transparent"
@@ -848,7 +846,6 @@ const PacmanGame = () => {
                 >
                     {renderWalls()}
 
-                    {/* Dots */}
                     {dots.map((dot, index) => (
                         <div
                             key={`dot-${index}`}
@@ -862,7 +859,6 @@ const PacmanGame = () => {
                         />
                     ))}
 
-                    {/* Power pellets */}
                     {powerPellets.map((pellet, index) => (
                         <div
                             key={`pellet-${index}`}
@@ -876,7 +872,6 @@ const PacmanGame = () => {
                         />
                     ))}
 
-                    {/* Pacman */}
                     <div
                         className="absolute bg-retro-yellow rounded-full overflow-hidden"
                         style={{
@@ -889,7 +884,6 @@ const PacmanGame = () => {
                             border: '1px solid retro-dark',
                         }}
                     >
-                        {/* Pacman mouth */}
                         <div
                             className="absolute bg-retro-dark"
                             style={{
@@ -900,7 +894,6 @@ const PacmanGame = () => {
                         />
                     </div>
 
-                    {/* Ghosts */}
                     {ghosts.map((ghost) => (
                         <div
                             key={`ghost-${ghost.id}`}
@@ -918,7 +911,6 @@ const PacmanGame = () => {
                                 alignItems: 'center'
                             }}
                         >
-                            {/* Ghosts eyes */}
                             <div className="w-full flex justify-around mt-1">
                                 <div className="relative" style={{
                                     width: `${dimensions.cellSize * 0.2}px`,
@@ -959,14 +951,13 @@ const PacmanGame = () => {
                                 </div>
                             </div>
 
-                            {/* Ghosts mouths */}
                             <div className="mb-1" style={{
                                 width: `${dimensions.cellSize * 0.4}px`,
                                 height: `${dimensions.cellSize * 0.15}px`,
                                 position: 'relative',
                                 overflow: 'hidden'
                             }}>
-                                {/* Ghosts mouths smile (normal) */}
+
                                 {!ghost.isScared && (
                                     <div style={{
                                         position: 'absolute',
@@ -979,7 +970,6 @@ const PacmanGame = () => {
                                     }}></div>
                                 )}
 
-                                {/* Ghosts mouths sad (scared) */}
                                 {ghost.isScared && (
                                     <div style={{
                                         position: 'absolute',
@@ -994,7 +984,7 @@ const PacmanGame = () => {
                             </div>
                         </div>
                     ))}
-                    {/* Game over overlay */}
+
                     {gameOver && (
                         <div className="absolute inset-0 bg-black bg-opacity-70 flex flex-col items-center justify-center">
                             <h2 className="text-retro-pink font-retro text-2xl sm:text-4xl mb-4 sm:mb-6">GAME OVER</h2>
@@ -1008,14 +998,12 @@ const PacmanGame = () => {
                         </div>
                     )}
 
-                    {/* Paused overlay */}
                     {isPaused && !gameOver && !showInstructions && (
                         <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
                             <h2 className="text-retro-blue font-retro text-2xl sm:text-4xl">PAUSED</h2>
                         </div>
                     )}
 
-                    {/* Instructions overlay */}
                     {showInstructions && (
                         <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-2 sm:p-4">
                             <div className="bg-retro-dark border-4 border-retro-yellow rounded-lg p-4 sm:p-6 max-w-2xl w-full mx-2 sm:mx-4 overflow-y-auto max-h-[90vh]">
@@ -1069,13 +1057,12 @@ const PacmanGame = () => {
                 </div>
             </div>
 
-            {/* Mobile controls - touch directional pad */}
-            <div className="md:hidden bg-retro-dark p-2 grid grid-cols-3 gap-2">
+            <div className="md:hidden bg-retro-dark p-3 grid grid-cols-3 gap-2 touch-none">
                 <div></div>
                 <button
                     onTouchStart={() => setPacman(prev => ({ ...prev, nextDirection: 'UP' }))}
-                    onTouchEnd={() => setPacman(prev => ({ ...prev, nextDirection: prev.direction }))}
-                    className="bg-retro-purple text-white p-3 rounded active:bg-retro-purple-dark"
+                    className="bg-retro-purple text-white p-3 rounded-lg text-xl active:bg-retro-purple-dark touch-pan-y"
+                    aria-label="Move up"
                 >
                     ↑
                 </button>
@@ -1083,21 +1070,22 @@ const PacmanGame = () => {
 
                 <button
                     onTouchStart={() => setPacman(prev => ({ ...prev, nextDirection: 'LEFT' }))}
-                    onTouchEnd={() => setPacman(prev => ({ ...prev, nextDirection: prev.direction }))}
-                    className="bg-retro-purple text-white p-3 rounded active:bg-retro-purple-dark"
+                    className="bg-retro-purple text-white p-3 rounded-lg text-xl active:bg-retro-purple-dark touch-pan-y"
+                    aria-label="Move left"
                 >
                     ←
                 </button>
                 <button
                     onClick={() => setIsPaused(prev => !prev)}
-                    className="bg-retro-blue text-white p-3 rounded active:bg-retro-blue-dark"
+                    className="bg-retro-blue text-white p-3 rounded-lg text-xl active:bg-retro-blue-dark touch-pan-y"
+                    aria-label="Pause game"
                 >
                     {isPaused ? '▶' : '⏸'}
                 </button>
                 <button
                     onTouchStart={() => setPacman(prev => ({ ...prev, nextDirection: 'RIGHT' }))}
-                    onTouchEnd={() => setPacman(prev => ({ ...prev, nextDirection: prev.direction }))}
-                    className="bg-retro-purple text-white p-3 rounded active:bg-retro-purple-dark"
+                    className="bg-retro-purple text-white p-3 rounded-lg text-xl active:bg-retro-purple-dark touch-pan-y"
+                    aria-label="Move right"
                 >
                     →
                 </button>
@@ -1105,8 +1093,8 @@ const PacmanGame = () => {
                 <div></div>
                 <button
                     onTouchStart={() => setPacman(prev => ({ ...prev, nextDirection: 'DOWN' }))}
-                    onTouchEnd={() => setPacman(prev => ({ ...prev, nextDirection: prev.direction }))}
-                    className="bg-retro-purple text-white p-3 rounded active:bg-retro-purple-dark"
+                    className="bg-retro-purple text-white p-3 rounded-lg text-xl active:bg-retro-purple-dark touch-pan-y"
+                    aria-label="Move down"
                 >
                     ↓
                 </button>
