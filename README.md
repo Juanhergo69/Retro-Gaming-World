@@ -77,7 +77,7 @@ game{
   }
 }
 
-User model:
+```js
 const userSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true, trim: true },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
@@ -86,7 +86,6 @@ const userSchema = new mongoose.Schema({
     favorites: [{ type: Number }]
 }, { timestamps: true })
 
-Game model:
 const gameSchema = new mongoose.Schema({
     id: { type: Number, required: true, unique: true },
     name: { type: String, required: true },
@@ -104,6 +103,7 @@ const gameSchema = new mongoose.Schema({
         timestamp: { type: Date, default: Date.now }
     }]
 })
+```
 
 ### Test Coverage
 
