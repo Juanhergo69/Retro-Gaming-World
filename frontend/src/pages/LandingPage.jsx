@@ -22,26 +22,22 @@ function LandingPage() {
                 Relive the classics. Challenge your friends.
             </p>
 
-            {/* Contenedor de botones mejorado */}
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full items-center justify-center">
-                <div className="w-full sm:w-auto max-w-xs sm:max-w-none">
-                    <Button
-                        onClick={() => navigate('/register')}
-                        variant="primary"
-                        className="w-full sm:w-32 md:w-40 text-center"
-                    >
-                        Register
-                    </Button>
-                </div>
-                <div className="w-full sm:w-auto max-w-xs sm:max-w-none">
-                    <Button
-                        onClick={() => navigate('/login')}
-                        variant="secondary"
-                        className="w-full sm:w-32 md:w-40 text-center"
-                    >
-                        Login
-                    </Button>
-                </div>
+            {/* Contenedor de botones - SOLUCIÓN DEFINITIVA */}
+            <div className="w-full flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+                <Button
+                    onClick={() => navigate('/register')}
+                    variant="primary"
+                    className="w-full max-w-xs sm:w-40 flex justify-center"
+                >
+                    <span className="text-center">Register</span>
+                </Button>
+                <Button
+                    onClick={() => navigate('/login')}
+                    variant="secondary"
+                    className="w-full max-w-xs sm:w-40 flex justify-center"
+                >
+                    <span className="text-center">Login</span>
+                </Button>
             </div>
         </div>
     )
