@@ -556,10 +556,10 @@ const SuperPangGame = () => {
                 </div>
             </div>
 
-            <div className="flex-1 flex flex-col items-center justify-center p-2 pt-4 md:pt-2">
+            <div className="flex-1 flex flex-col items-center justify-center p-2 sm:pt-2">
                 <div
                     ref={gameContainerRef}
-                    className="relative bg-black border-4 border-retro-green"
+                    className="relative bg-black border-4 border-retro-green sm:mt-0 mt-[-3rem]"
                     style={{
                         width: `${GRID_WIDTH * cellSize}px`,
                         height: `${GRID_HEIGHT * cellSize}px`,
