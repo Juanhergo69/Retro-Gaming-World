@@ -29,7 +29,7 @@ const getGameDimensions = () => {
 }
 
 const TouchButton = ({ onClick, children, className, style }) => {
-    const buttonRef = useRef(null);
+    const buttonRef = useRef(null)
 
     useEffect(() => {
         const button = buttonRef.current
@@ -40,7 +40,7 @@ const TouchButton = ({ onClick, children, className, style }) => {
             onClick()
         }
 
-        button.addEventListener('touchstart', handleTouchStart, { passive: false });
+        button.addEventListener('touchstart', handleTouchStart, { passive: false })
         button.addEventListener('contextmenu', (e) => e.preventDefault())
 
         return () => {
@@ -151,6 +151,31 @@ const ConnectFourGame = () => {
 
     const makeCpuMove = useCallback(() => {
         if (gameOver || isPaused || currentPlayer !== 'yellow') return
+
+        //Check 4 column//
+        const isFirstMove = board.flat().filter(cell => cell !== null).length === 1
+        const playerStartedCenter = isFirstMove && board[dimensions.rows - 1][3] === 'red'
+
+        if (playerStartedCenter) {
+            const blockingColumns = [2, 4]
+            for (const col of blockingColumns) {
+                if (isValidMove(col)) {
+                    setTimeout(() => {
+                        const newBoard = [...board]
+                        for (let row = dimensions.rows - 1; row >= 0; row--) {
+                            if (newBoard[row][col] === null) {
+                                newBoard[row][col] = 'yellow'
+                                break
+                            }
+                        }
+                        setBoard(newBoard)
+                        checkWin(newBoard, 'yellow')
+                        setCurrentPlayer('red')
+                    }, Math.max(100, 600 - (level * 50)))
+                    return
+                }
+            }
+        }
 
         let col = null
         const strategies = [
@@ -503,9 +528,10 @@ const ConnectFourGame = () => {
                                 <div
                                     key={`cell-${rowIndex}-${colIndex}`}
                                     className={`rounded-full border-2 flex items-center justify-center
-    ${cell === 'red' ? 'bg-red-500' :
+        ${cell === 'red' ? 'bg-red-500' :
                                             cell === 'yellow' ? 'bg-yellow-400' : 'bg-white'}
-    ${isWinningCell ? 'border-white border-4' : 'border-blue-800'}`}
+        border-blue-800
+        ${isWinningCell ? 'shadow-[0_0_0_4px_white]' : ''}`}
                                     style={{
                                         width: '100%',
                                         height: '0',
@@ -516,8 +542,8 @@ const ConnectFourGame = () => {
                                     onClick={() => makeMove(colIndex)}
                                     onContextMenu={(e) => e.preventDefault()}
                                     onTouchStart={(e) => {
-                                        e.preventDefault();
-                                        makeMove(colIndex);
+                                        e.preventDefault()
+                                        makeMove(colIndex)
                                     }}
                                     onMouseDown={(e) => e.preventDefault()}
                                 />
