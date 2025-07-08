@@ -556,7 +556,7 @@ const SuperPangGame = () => {
                 </div>
             </div>
 
-            <div className="flex-1 flex items-center justify-center p-2">
+            <div className="flex-1 flex flex-col items-center justify-center p-2 pt-4 md:pt-2">
                 <div
                     ref={gameContainerRef}
                     className="relative bg-black border-4 border-retro-green"
@@ -565,7 +565,7 @@ const SuperPangGame = () => {
                         height: `${GRID_HEIGHT * cellSize}px`,
                         boxSizing: 'content-box',
                         maxWidth: '100%',
-                        maxHeight: 'calc(100vh - 150px)'
+                        maxHeight: 'calc(100vh - 200px)'
                     }}
                 >
                     <div
@@ -678,42 +678,41 @@ const SuperPangGame = () => {
             </div>
 
             <div className="md:hidden bg-retro-dark/90 p-3 fixed bottom-0 left-0 right-0 select-none">
-                <div className="flex justify-center mb-2">
-                    <TouchControlButton
-                        onPress={shootBullet}
-                        ariaLabel="Shoot"
-                        className="bg-retro-purple text-white px-6 py-3 rounded-lg text-lg w-full max-w-md active:bg-retro-purple-dark"
-                        disabled={isShooting}
-                    >
-                        Shoot
-                    </TouchControlButton>
-                </div>
-
-                <div className="grid grid-cols-3 gap-3">
-                    <TouchControlButton
-                        onPress={() => handleTouchStart('LEFT')}
-                        onRelease={handleTouchEnd}
-                        ariaLabel="Move left"
-                        className="bg-retro-purple text-white py-4 rounded-lg text-2xl active:bg-retro-purple-dark"
-                    >
-                        ←
-                    </TouchControlButton>
+                <div className="flex justify-between items-center">
+                    <div className="flex gap-3">
+                        <TouchControlButton
+                            onPress={() => handleTouchStart('LEFT')}
+                            onRelease={handleTouchEnd}
+                            ariaLabel="Move left"
+                            className="bg-retro-purple text-white w-16 h-16 flex items-center justify-center rounded-lg text-3xl active:bg-retro-purple-dark"
+                        >
+                            ←
+                        </TouchControlButton>
+                        <TouchControlButton
+                            onPress={() => handleTouchStart('RIGHT')}
+                            onRelease={handleTouchEnd}
+                            ariaLabel="Move right"
+                            className="bg-retro-purple text-white w-16 h-16 flex items-center justify-center rounded-lg text-3xl active:bg-retro-purple-dark"
+                        >
+                            →
+                        </TouchControlButton>
+                    </div>
 
                     <button
                         onClick={() => setIsPaused(prev => !prev)}
-                        className="bg-retro-blue text-white py-4 rounded-lg text-2xl touch-none active:bg-retro-blue-dark"
+                        className="bg-retro-blue text-white w-14 h-14 flex items-center justify-center rounded-lg text-2xl mx-3 touch-none active:bg-retro-blue-dark"
                         onContextMenu={(e) => e.preventDefault()}
                     >
                         {isPaused ? '▶' : '⏸'}
                     </button>
 
                     <TouchControlButton
-                        onPress={() => handleTouchStart('RIGHT')}
-                        onRelease={handleTouchEnd}
-                        ariaLabel="Move right"
-                        className="bg-retro-purple text-white py-4 rounded-lg text-2xl active:bg-retro-purple-dark"
+                        onPress={shootBullet}
+                        ariaLabel="Shoot"
+                        className="bg-retro-pink text-white w-24 h-14 flex items-center justify-center rounded-lg text-lg font-bold active:bg-retro-pink-dark"
+                        disabled={isShooting}
                     >
-                        →
+                        SHOOT
                     </TouchControlButton>
                 </div>
             </div>
