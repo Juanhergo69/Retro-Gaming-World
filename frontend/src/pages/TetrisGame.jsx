@@ -101,6 +101,8 @@ const TetrisGame = () => {
             setIsMobile(window.innerWidth <= 768)
         }
 
+        handleResize()
+
         window.addEventListener('resize', handleResize)
         return () => window.removeEventListener('resize', handleResize)
     }, [])
@@ -463,9 +465,9 @@ const TetrisGame = () => {
                     <div
                         className="grid mx-auto"
                         style={{
-                            gridTemplateRows: `repeat(${nextPiece.height}, 20px)`,
-                            gridTemplateColumns: `repeat(${nextPiece.width}, 20px)`,
-                            width: `${nextPiece.width * 20}px`
+                            gridTemplateRows: `repeat(${nextPiece.height}, ${isMobile ? '20px' : '20px'})`,
+                            gridTemplateColumns: `repeat(${nextPiece.width}, ${isMobile ? '20px' : '20px'})`,
+                            width: `${nextPiece.width * (isMobile ? 20 : 20)}px`
                         }}
                     >
                         {nextPiece.shape.map((row, rowIndex) => (
@@ -517,11 +519,12 @@ const TetrisGame = () => {
                 <div
                     className="relative bg-black border-4 border-retro-green touch-none"
                     style={{
-                        width: `${COLS * (isMobile ? 25 : 30) + 8}px`,
-                        height: `${ROWS * (isMobile ? 25 : 30) + 8}px`,
+                        width: `${COLS * (isMobile ? Math.min(Math.floor((window.innerHeight * 0.7) / ROWS), 25) : 30) + 8}px`,
+                        height: `${ROWS * (isMobile ? Math.min(Math.floor((window.innerHeight * 0.7) / ROWS), 25) : 30) + 8}px`,
                         minWidth: `${COLS * (isMobile ? 25 : 30) + 8}px`,
                         minHeight: `${ROWS * (isMobile ? 25 : 30) + 8}px`,
                         maxWidth: '100%',
+                        maxHeight: isMobile ? '70vh' : 'none',
                         boxSizing: 'content-box'
                     }}
                     onContextMenu={(e) => e.preventDefault()}
