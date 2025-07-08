@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { submitScore, getHighScore } from '../logic/scoreService/'
 
 const COLS = 10
-const ROWS = 18
+const ROWS = 16
 const INITIAL_SPEED = 800
 const SPEED_DECREMENT = 50
 const LINES_PER_LEVEL = 10
@@ -519,12 +519,9 @@ const TetrisGame = () => {
                 <div
                     className="relative bg-black border-4 border-retro-green touch-none"
                     style={{
-                        width: `${COLS * (isMobile ? Math.min(Math.floor((window.innerHeight * 0.7) / ROWS), 25) : 30) + 8}px`,
-                        height: `${ROWS * (isMobile ? Math.min(Math.floor((window.innerHeight * 0.7) / ROWS), 25) : 30) + 8}px`,
-                        minWidth: `${COLS * (isMobile ? 25 : 30) + 8}px`,
-                        minHeight: `${ROWS * (isMobile ? 25 : 30) + 8}px`,
-                        maxWidth: '100%',
-                        maxHeight: isMobile ? '70vh' : 'none',
+                        width: `${COLS * (isMobile ? 25 : 30)}px`,
+                        height: `${ROWS * (isMobile ? 25 : 30)}px`,
+                        maxHeight: isMobile ? '65vh' : 'none',
                         boxSizing: 'content-box'
                     }}
                     onContextMenu={(e) => e.preventDefault()}
